@@ -1,5 +1,5 @@
 #!/bin/env python3
-from dtgraph import Neo4jGraph
+from dtgraph import Neo4jGraph, Rule
 
 if __name__ == "__main__":
     scheme = "bolt"
@@ -9,3 +9,6 @@ if __name__ == "__main__":
     graph = Neo4jGraph(uri, "neo4j", verbose=True)
 
     print(graph.output_all_nodes())
+
+    rule = Rule(lhs="MATCH (n)", rhs="RETURN n")
+    print(rule.apply(graph))
