@@ -1,4 +1,4 @@
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase, basic_auth
 
 class Neo4jGraph(object):
     """Class reflecting a Neo4j graph instance.
@@ -6,10 +6,15 @@ class Neo4jGraph(object):
     This class encapsulates a neo4j.GraphDatabase object.
     """
 
-    def __init__(self, uri, database, verbose=False):
-        self.driver = GraphDatabase.driver(
+    def __init__(self, uri, database, username=None, password=None, verbose=False):
+        if username is None:
+            self.driver = GraphDatabase.driver(
                 uri, 
                 auth=None)
+        else:
+            self.driver = GraphDatabase.driver(
+                uri, 
+                auth=basic_auth(username, password))
         self.database = database
         self.verbose = verbose
 
