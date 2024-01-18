@@ -1,9 +1,9 @@
 import pyparsing as pp
 
-# Some known differences with Cypher's syntax: https://neo4j.com/docs/cypher-manual/current/syntax/naming/
-#   - We require variables to begin with a lowercase character
-#   - We require node labels and relationship types to start with an uppercase character
-#   - We disallow underscores in node labels, relationship types, property names, variables
+# Some voluntary differences with Cypher's syntax: https://neo4j.com/docs/cypher-manual/current/syntax/naming/
+#   - We require variables to begin with a lowercase character.
+#   - We require node labels and relationship types to start with an uppercase character.
+#   - We disallow underscores in node labels, relationship types, property names, variables. (Hint: use camelCase)
 
 COMMA, COLON, LPAR, RPAR, LANGLE, RANGLE, EQUAL = map(pp.Suppress, ",:()⟨⟩=")
 
@@ -19,10 +19,11 @@ IDElement = constant('value') | accesskey('value') | freevar('value') | label('v
 PropertyElement = pp.Group(attribute('key') + EQUAL + ( constant('value') | accesskey('value')))
 
 IDTuple = LPAR + pp.ZeroOrMore(IDElement + pp.Optional(COMMA))('ids') + RPAR
-Labels = pp.ZeroOrMore(label + pp.Optional(COMMA))('labels')
+Labels = pp.OneOrMore(label + pp.Optional(COMMA))('labels')
 PropertyList = pp.Optional(LANGLE + pp.OneOrMore(PropertyElement + pp.Optional(COMMA))('properties') + RANGLE)
 
-ContentConstructor = LPAR + pp.Optional(freevar('alias') + EQUAL) + IDTuple + pp.Optional(COLON + Labels) + RPAR + PropertyList('properties')
+ContentConstructor = LPAR + pp.Optional(freevar('alias') + EQUAL) + IDTuple + COLON + pp.Optional(Labels) + RPAR + PropertyList('properties')
+NodeConstructor = ContentConstructor | LPAR + freevar('alias') + RPAR
 
 try:
     print("Test base elements:")
@@ -58,6 +59,11 @@ try:
     res = ContentConstructor.parse_string('(x = () : ) ⟨ ⟩')
     print(res.as_dict())
     res = ContentConstructor.parse_string('(() : )')
+    print(res.as_dict())
+    print("Test NodeConstructor:")
+    res = NodeConstructor.parse_string('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State,) ⟨ name = "test", city = x.city, ⟩')
+    print(res.as_dict())
+    res = NodeConstructor.parse_string('(x)')
     print(res.as_dict())
 except pp.ParseException as pe:
     print("Did not Match: ", pe)
