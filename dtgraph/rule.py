@@ -59,6 +59,9 @@ class Rule(object):
     @classmethod
     def from_ascii(cls, ascii_string):
         """Create a rule obj from ASCII repr."""
+
+        [lhs, rhs] = ascii_string.split("=>")
+        print(lhs + rhs)
         pass
 
     def apply(self, graph):
@@ -67,7 +70,7 @@ class Rule(object):
         Parameters
         ----------
         graph : dtgraph.backend.neo4j.graph.Neo4jGraph
-            Graph to transform with the rule.
+            Graph to be transformed by the rule.
         """
         return graph.query(self.lhs + "\n" + self.rhs) 
 

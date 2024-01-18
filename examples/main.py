@@ -29,3 +29,5 @@ if __name__ == "__main__":
 
     rule = Rule(lhs="MATCH (n)", rhs="RETURN n")
     print(rule.apply(graph))
+
+    Rule.from_ascii('MATCH(n) => OUTPUT (n)')

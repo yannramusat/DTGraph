@@ -26,5 +26,6 @@ setuptools.setup(
     ],
     install_requires = [
         "neo4j",
+        "pyparsing",
     ],
 )
