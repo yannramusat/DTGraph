@@ -5,18 +5,24 @@ import pyparsing as pp
 #   - We require node labels and relationship types to start with an uppercase character
 #   - We disallow underscores in node labels, relationship types, property names, variables
 
+COMMA, COLON, LPAR, RPAR, LANGLE, RANGLE, EQUAL = map(pp.Suppress, ",:()⟨⟩=")
+
 constant = pp.Combine(pp.Literal('"') + pp.Word(pp.alphanums) + pp.Literal('"'))
 freevar = pp.Word(pp.alphas.lower(), pp.alphanums)
 attribute = pp.Word(pp.alphas, pp.alphanums)
-accesskey = pp.Combine(
-    freevar('freevar') + 
-    pp.Literal('.') + 
-    attribute('key'))
+accesskey = pp.Combine(freevar('freevar') + pp.Literal('.') + attribute('key'))
 label = pp.Word(pp.alphas.upper(), pp.alphanums)
 
+# To see, this might explain why we need to use the name 'value' there: 
+# https://stackoverflow.com/questions/74876130/how-do-i-correctly-name-parseresults
 IDElement = constant('value') | accesskey('value') | freevar('value') | label('value')
+PropertyElement = pp.Group(attribute('key') + EQUAL + ( constant('value') | accesskey('value')))
 
-IDTuple = pp.Suppress('(') + pp.ZeroOrMore(IDElement + pp.Optional(pp.Suppress(',')))('ids') + pp.Suppress(')')
+IDTuple = LPAR + pp.ZeroOrMore(IDElement + pp.Optional(COMMA))('ids') + RPAR
+Labels = pp.ZeroOrMore(label + pp.Optional(COMMA))('labels')
+PropertyList = pp.Optional(LANGLE + pp.OneOrMore(PropertyElement + pp.Optional(COMMA))('properties') + RANGLE)
+
+ContentConstructor = LPAR + pp.Optional(freevar('alias') + EQUAL) + IDTuple + pp.Optional(COLON + Labels) + RPAR + PropertyList('properties')
 
 try:
     print("Test base elements:")
@@ -43,5 +49,15 @@ try:
     print(res['ids'][2])
     print(res['ids'][2]['freevar'])
     print(res['ids'][2]['key'])
+    print(res.as_dict())
+    print("Test ContentConstructor:")
+    res = ContentConstructor.parse_string('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State,) ⟨ name = "test", city = x.city, ⟩')
+    print(res.as_dict())
+    res = ContentConstructor.parse_string('(w = (x) : ) ⟨name = x.name⟩')
+    print(res.as_dict())
+    res = ContentConstructor.parse_string('(x = () : ) ⟨ ⟩')
+    print(res.as_dict())
+    res = ContentConstructor.parse_string('(() : )')
+    print(res.as_dict())
 except pp.ParseException as pe:
     print("Did not Match: ", pe)
