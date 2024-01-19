@@ -8,7 +8,6 @@ from pyparsing import *
 COMMA, COLON, LPAR, RPAR, LBRACE, RBRACE, EQUAL = map(Suppress, ",:(){}=")
 
 #constant = Combine(Literal('"') + Word(alphanums) + Literal('"'))
-# TODO support complex Cypher string operations such as concatenations
 constant = QuotedString('"', unquoteResults=False)
 freevar = Word(alphas.lower(), alphanums)
 attribute = Word(alphas, alphanums)
@@ -16,14 +15,18 @@ accesskey = Combine(freevar + Literal('.') + attribute)
 label = Word(alphas.upper(), alphanums)
 
 IDElement = (constant | accesskey | freevar | label)
-PropertyElement = Group(attribute('key') + EQUAL + ( constant('value') | accesskey('value')))
+# as list of constant or accesskey expressions
+#ConstExpression = DelimitedList(accesskey | constant, delim="+")
+# flatened Constexpression
+ConstExpression = Combine((accesskey | constant) + ZeroOrMore("+" + (accesskey | constant)), adjacent=False, joinString=" ")
+PropertyElement = Group(attribute('key') + EQUAL + ConstExpression('value'))
 
 IDTuple = LPAR + ZeroOrMore(IDElement + Optional(COMMA))('ids') + RPAR
 Labels = OneOrMore(label + Optional(COMMA))('labels')
 PropertyList = LBRACE + OneOrMore(PropertyElement + Optional(COMMA))('properties') + RBRACE
 
 ContentConstructor = LPAR + Optional(freevar('alias') + EQUAL) + IDTuple + COLON + Optional(Labels) + Optional(PropertyList) + RPAR 
-NodeConstructor = ContentConstructor | LPAR + freevar('alias') + RPAR
+NodeConstructor = ContentConstructor | (LPAR + freevar('alias') + RPAR)
 
 try:
     print("Test base elements:")
@@ -48,8 +51,11 @@ try:
     print(res['ids'][1])
     print(res['ids'][2])
     print(res.asDict())
+    print("Test ConstExpression:")
+    res = ConstExpression.parseString(' "test" + "cc" ')
+    print(res.dump())
     print("Test ContentConstructor:")
-    res = ContentConstructor.parseString('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test", city = x.city, } ) ')
+    res = ContentConstructor.parseString('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test" + "cc", city = x.city, } ) ')
     print(res.asDict())
     res = ContentConstructor.parseString('(w = (x) : { name = x.name } ) ')
     print(res.asDict())
@@ -58,7 +64,7 @@ try:
     res = ContentConstructor.parseString('(() : )')
     print(res.asDict())
     print("Test NodeConstructor:")
-    res = NodeConstructor.parseString('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test", city = x.city, } ) ')
+    res = NodeConstructor.parseString('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test" + x.name  , city = x.city + y.va, } ) ')
     print(res.asDict())
     res = NodeConstructor.parseString('(x)')
     print(res.asDict())
