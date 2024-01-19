@@ -80,7 +80,7 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
     def testRightEdgeConstructor(self):
         self.assertParseAndCheckDict(
             RightEdgeConstructor, 
-            '( (x) : Person { name = x.name }  ) -[ (x.a, "test") : HAS { name = x.name } ]-> (w)', {
+            '( (x,) : Person { name = x.name }  ) -[ (x.a,"test") : HAS { name = x.name } ]-> (w)', {
                 'src': {
                     'ids': ['x'], 
                     'labels': ['Person'], 
@@ -124,6 +124,50 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
                         {'key': 'c', 'value': 'x.c + y.va'}
                     ]
                 }
+            }
+        )
+
+    def testRightHandSide(self):
+        self.assertParseAndCheckDict(
+            RightHandSide, 
+            '((x):P) -[ (x.a): ]-> ((L):), ((x):P{n=x.n})<-[(x.a,"t"):H,T{m=x.m+y.c+"3"}]-(w=("r",x, x1.d1,L):P, S,{n="u"+x.n,c=x.c+y.va,}), (w = ("t"):U{n=a.u}), (z = (L):V,J{n=a.u}), ', {
+                'constructors': [{
+                        'src': {
+                            'ids': ['x'], 
+                            'labels': ['P']}, 
+                        'edge': {
+                            'ids': ['x.a']}, 
+                        'tgt': {
+                            'ids': ['L']}
+                    }, {
+                        'tgt': {
+                            'ids': ['x'], 
+                            'labels': ['P'], 
+                            'properties': [{'key': 'n', 'value': 'x.n'}]
+                        }, 
+                        'edge': {
+                            'ids': ['x.a', '"t"'], 
+                            'labels': ['H', 'T'], 
+                            'properties': [{'key': 'm', 'value': 'x.m + y.c + "3"'}]
+                        }, 
+                        'src': {
+                            'alias': 'w', 
+                            'ids': ['"r"', 'x', 'x1.d1', 'L'], 
+                            'labels': ['P', 'S'], 
+                            'properties': [{'key': 'n', 'value': '"u" + x.n'}, {'key': 'c', 'value': 'x.c + y.va'}]
+                        }
+                    }, {
+                        'alias': 'w', 
+                        'ids': ['"t"'], 
+                        'labels': ['U'], 
+                        'properties': [{'key': 'n', 'value': 'a.u'}]
+                    }, {
+                        'alias': 'z', 
+                        'ids': ['L'], 
+                        'labels': ['V', 'J'], 
+                        'properties': [{'key': 'n', 'value': 'a.u'}]
+                    }
+                ]
             }
         )
 

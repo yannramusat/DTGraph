@@ -23,15 +23,18 @@ IDElement = (constant | accesskey | freevar | label)
 ConstExpression = Combine((accesskey | constant) + ZeroOrMore("+" + (accesskey | constant)), adjacent=False, joinString=" ")
 PropertyElement = Group(attribute('key') + EQUAL + ConstExpression('value'))
 
-IDTuple = LPAR + ZeroOrMore(IDElement + Optional(COMMA))('ids') + RPAR
-Labels = OneOrMore(label + Optional(COMMA))('labels')
-PropertyList = LBRACE + OneOrMore(PropertyElement + Optional(COMMA))('properties') + RBRACE
+IDTuple = LPAR + Optional(DelimitedList(IDElement, allow_trailing_delim=True), default=[])('ids') + RPAR
+Labels = DelimitedList(label, allow_trailing_delim=True)('labels')
+PropertyList = LBRACE + DelimitedList(PropertyElement, allow_trailing_delim=True)('properties') + RBRACE
 
 ContentConstructor = Optional(freevar('alias') + EQUAL) + IDTuple + COLON + Optional(Labels) + Optional(PropertyList) 
 NodeConstructor = LPAR + (ContentConstructor | freevar('alias')) + RPAR
 RightEdgeConstructor = Group(NodeConstructor)('src') + Suppress('-[') + Group(ContentConstructor)('edge') + Suppress(']->') + Group(NodeConstructor)('tgt')
 LeftEdgeConstructor = Group(NodeConstructor)('tgt') + Suppress('<-[') + Group(ContentConstructor)('edge') + Suppress(']-') + Group(NodeConstructor)('src')
 EdgeConstructor = RightEdgeConstructor | LeftEdgeConstructor
+
+Constructor = EdgeConstructor | NodeConstructor
+RightHandSide = DelimitedList(Group(Constructor), allow_trailing_delim=True)('constructors')
 
 if __name__ == "__main__":
     try:
@@ -99,6 +102,8 @@ if __name__ == "__main__":
         ''')
         status &= res
         res, _ = IDTuple.runTests('''
+            # Should be a comma between the list elements ✘
+            ("c" x.a)
             # Cannot have only one comma ✘
             (,)
         ''', failure_tests=True)
