@@ -19,7 +19,7 @@ label = Word(alphas.upper(), alphanums)
 IDElement = (constant | accesskey | freevar | label)
 # As list of constant or accesskey expressions:
 #ConstExpression = DelimitedList(accesskey | constant, delim="+")
-# Or, flatened Constexpression:
+# Or, flatened ConstExpression:
 ConstExpression = Combine((accesskey | constant) + ZeroOrMore("+" + (accesskey | constant)), adjacent=False, joinString=" ")
 PropertyElement = Group(attribute('key') + EQUAL + ConstExpression('value'))
 
@@ -43,9 +43,9 @@ if __name__ == "__main__":
         ''')
         status &= res
         res, _ = constant.runTests('''
-            # Not enclosed in " 
+            # Not enclosed in " ✘
             test
-            # " is not escaped
+            # " not escaped ✘
             "fjek"fe"
         ''', failure_tests=True)
         status &= res
@@ -56,27 +56,30 @@ if __name__ == "__main__":
         ''')
         status &= res
         res, _ = freevar.runTests('''
-            # Capitalized (should not be a label)
+            # Capitalized (should not be a label) ✘
             Label
-            # Cannot start with an integer
+            # Cannot start with an integer ✘
             1ax
         ''', failure_tests=True)
         status &= res
         res, _ = accesskey.runTests('''
             ##### Test accesskey: #####
-            x1.de1
-            x2.de2
+            x.de
+            x.de1
+            x2.de
             x3.de3
         ''')
         status &= res
         res, _ = accesskey.runTests('''
-            # No attribute
+            # No attribute ✘
             x1
-            # Not a variable
+            # Not a variable ✘
             Label
-            # should not use const on either side
+            # Should not use const on either side ✘
             "test".de3
             x1."test"
+            # Does not work as a const ✘
+            "test.de"
         ''', failure_tests=True)
         status &= res
         res, _ = IDElement.runTests('''
@@ -90,39 +93,34 @@ if __name__ == "__main__":
         res, out = IDTuple.runTests('''
             ##### Test IDTuple: #####
             (x1.de1, x2.de2, x3.de3)
+            # list ending with a comma ✔
             ("test", x, x1.de1, x2.de2, x3.de3, )
             ()
         ''')
         status &= res
         res, _ = IDTuple.runTests('''
-            # Cannot have only one comma
+            # Cannot have only one comma ✘
             (,)
         ''', failure_tests=True)
         status &= res
-        print(status)
-        ConstExpression.runTests('''
-            # Test ConstExpression:
+        res, _ = ConstExpression.runTests('''
+            ##### Test ConstExpression: #####
             "test" + "cc"
+            x.a
+            x1.d2a + "test"
         ''')
-        print("Test ContentConstructor:")
-        res = ContentConstructor.parseString('("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test" + "cc", city = x.city, }  ')
-        print(res.asDict())
-        res = ContentConstructor.parseString('w = (x) : { name = x.name }  ')
-        print(res.asDict())
-        res = ContentConstructor.parseString('x = () : ')
-        print(res.asDict())
-        res = ContentConstructor.parseString('() : ')
-        print(res.asDict())
-        print("Test NodeConstructor:")
-        res = NodeConstructor.parseString('( w = ("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test" + x.name  , city = x.city + y.va, } ) ')
-        print(res.asDict())
-        res = NodeConstructor.parseString('(x)')
-        print(res.asDict())
-        print("Test RightEdgeConstructor:")
-        res = RightEdgeConstructor.parseString('( (x) : Person { name = x.name }  ) -[ (x.a, "test") : HAS { name = x.name } ]-> (w)')
-        print(res.asDict())
-        print("Test EdgeConstructor:")
-        res = EdgeConstructor.parseString('((x):P{n=x.n})<-[(x.a,"t"):H,T{m=x.m+y.c+"3"}]-(w=("r",x,x1.de1,L):P,S,{n="u"+x.n,c=x.c+y.va,})')
-        print(res.asDict())
+        status &= res
+        res, _ = ConstExpression.runTests('''
+            # Variables cannot be used inside a constexpression ✘
+            var1
+            # Labels cannot be used inside a constexpression ✘
+            Label
+        ''', failure_tests=True)
+        status &= res
+
+        if status:
+            print("\nAll tests passed!")
+        else:
+            print("\nSome tests failed...")
     except ParseException as pe:
         print("Did not Match: ", pe)
