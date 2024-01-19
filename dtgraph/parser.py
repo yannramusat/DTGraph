@@ -1,69 +1,66 @@
-import pyparsing as pp
+from pyparsing import *
 
 # Some voluntary differences with Cypher's syntax: https://neo4j.com/docs/cypher-manual/current/syntax/naming/
 #   - We require variables to begin with a lowercase character.
 #   - We require node labels and relationship types to start with an uppercase character.
 #   - We disallow underscores in node labels, relationship types, property names, variables. (Hint: use camelCase)
 
-COMMA, COLON, LPAR, RPAR, LANGLE, RANGLE, EQUAL = map(pp.Suppress, ",:()⟨⟩=")
+COMMA, COLON, LPAR, RPAR, LBRACE, RBRACE, EQUAL = map(Suppress, ",:(){}=")
 
-constant = pp.Combine(pp.Literal('"') + pp.Word(pp.alphanums) + pp.Literal('"'))
-freevar = pp.Word(pp.alphas.lower(), pp.alphanums)
-attribute = pp.Word(pp.alphas, pp.alphanums)
-accesskey = pp.Combine(freevar('freevar') + pp.Literal('.') + attribute('key'))
-label = pp.Word(pp.alphas.upper(), pp.alphanums)
+#constant = Combine(Literal('"') + Word(alphanums) + Literal('"'))
+# TODO support complex Cypher string operations such as concatenations
+constant = QuotedString('"', unquoteResults=False)
+freevar = Word(alphas.lower(), alphanums)
+attribute = Word(alphas, alphanums)
+accesskey = Combine(freevar + Literal('.') + attribute)
+label = Word(alphas.upper(), alphanums)
 
-# To see, this might explain why we need to use the name 'value' there: 
-# https://stackoverflow.com/questions/74876130/how-do-i-correctly-name-parseresults
-IDElement = constant('value') | accesskey('value') | freevar('value') | label('value')
-PropertyElement = pp.Group(attribute('key') + EQUAL + ( constant('value') | accesskey('value')))
+IDElement = (constant | accesskey | freevar | label)
+PropertyElement = Group(attribute('key') + EQUAL + ( constant('value') | accesskey('value')))
 
-IDTuple = LPAR + pp.ZeroOrMore(IDElement + pp.Optional(COMMA))('ids') + RPAR
-Labels = pp.OneOrMore(label + pp.Optional(COMMA))('labels')
-PropertyList = pp.Optional(LANGLE + pp.OneOrMore(PropertyElement + pp.Optional(COMMA))('properties') + RANGLE)
+IDTuple = LPAR + ZeroOrMore(IDElement + Optional(COMMA))('ids') + RPAR
+Labels = OneOrMore(label + Optional(COMMA))('labels')
+PropertyList = LBRACE + OneOrMore(PropertyElement + Optional(COMMA))('properties') + RBRACE
 
-ContentConstructor = LPAR + pp.Optional(freevar('alias') + EQUAL) + IDTuple + COLON + pp.Optional(Labels) + RPAR + PropertyList('properties')
+ContentConstructor = LPAR + Optional(freevar('alias') + EQUAL) + IDTuple + COLON + Optional(Labels) + Optional(PropertyList) + RPAR 
 NodeConstructor = ContentConstructor | LPAR + freevar('alias') + RPAR
 
 try:
     print("Test base elements:")
-    print(constant.parse_string(' "test" '))
-    print(freevar.parse_string(' x '))
-    print(accesskey.parse_string(' x1.de1 '))
-    print(accesskey.parse_string(' x2.de2 ')['freevar'])
-    print(accesskey.parse_string(' x3.de3 ')['key'])
+    print(constant.parseString(' "test" '))
+    print(freevar.parseString(' x '))
+    print(accesskey.parseString(' x1.de1 ').asDict)
+    print(accesskey.parseString(' x2.de2 '))
+    print(accesskey.parseString(' x3.de3 '))
     print("Test IDElement:")
-    print(IDElement.parse_string(' "test" ')['value'])
-    print(IDElement.parse_string(' x ')['value'])
-    print(IDElement.parse_string(' x1.de1 ')['value'])
-    print(IDElement.parse_string(' x2.de2 ')['value']['freevar'])
-    print(IDElement.parse_string(' x3.de3 ')['value']['key'])
+    print(IDElement.parseString(' "test" ').asDict())
+    print(IDElement.parseString(' x ').asDict())
+    print(IDElement.parseString(' x1.de1 ').asDict())
+    print(IDElement.parseString(' x2.de2 ').asDict())
+    print(IDElement.parseString(' x3.de3 ').asDict())
     print("Test accesskeys:")
-    res = IDTuple.parse_string('( x1.de1, x2.de2, x3.de3 )')
+    res = IDTuple.parseString('( x1.de1, x2.de2, x3.de3 )')
+    print(res.asDict())
     print(res['ids'][1])
-    print(res['ids'][1]['freevar'])
-    print(res['ids'][1]['key'])
     print("Test IDTuple:")
-    res = IDTuple.parse_string('("test", x, x1.de1, x2.de2, x3.de3, )')
+    res = IDTuple.parseString('("test", x, x1.de1, x2.de2, x3.de3, )')
     print(res['ids'][0])
     print(res['ids'][1])
     print(res['ids'][2])
-    print(res['ids'][2]['freevar'])
-    print(res['ids'][2]['key'])
-    print(res.as_dict())
+    print(res.asDict())
     print("Test ContentConstructor:")
-    res = ContentConstructor.parse_string('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State,) ⟨ name = "test", city = x.city, ⟩')
-    print(res.as_dict())
-    res = ContentConstructor.parse_string('(w = (x) : ) ⟨name = x.name⟩')
-    print(res.as_dict())
-    res = ContentConstructor.parse_string('(x = () : ) ⟨ ⟩')
-    print(res.as_dict())
-    res = ContentConstructor.parse_string('(() : )')
-    print(res.as_dict())
+    res = ContentConstructor.parseString('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test", city = x.city, } ) ')
+    print(res.asDict())
+    res = ContentConstructor.parseString('(w = (x) : { name = x.name } ) ')
+    print(res.asDict())
+    res = ContentConstructor.parseString('(x = () : ) ')
+    print(res.asDict())
+    res = ContentConstructor.parseString('(() : )')
+    print(res.asDict())
     print("Test NodeConstructor:")
-    res = NodeConstructor.parse_string('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State,) ⟨ name = "test", city = x.city, ⟩')
-    print(res.as_dict())
-    res = NodeConstructor.parse_string('(x)')
-    print(res.as_dict())
-except pp.ParseException as pe:
+    res = NodeConstructor.parseString('(("test", x, x1.de1, x2.de2, x3.de3, ) : Person, State, { name = "test", city = x.city, } ) ')
+    print(res.asDict())
+    res = NodeConstructor.parseString('(x)')
+    print(res.asDict())
+except ParseException as pe:
     print("Did not Match: ", pe)
