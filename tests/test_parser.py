@@ -171,5 +171,46 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
             }
         )
 
+    def testRule(self):
+        self.assertParseAndCheckDict(
+            Rule, 
+            """
+            MATCH (n) 
+            RETURN n
+            => 
+            (x = (n) : Person {
+                name = "SK1(" + n.name + ")" 
+            })-[(): Knows]->(y = (n) : Person {
+                name = "SK2(" + n.name + ")" 
+            })
+            """, {
+                'lhs': 'MATCH (n) \n            RETURN n\n            ',
+                'constructors': [{
+                    'src': {
+                        'alias': 'x', 
+                        'ids': ['n'], 
+                        'labels': ['Person'], 
+                        'properties': [{
+                            'key': 'name', 
+                            'value': '"SK1(" + n.name + ")"'
+                        }]
+                    }, 
+                    'edge': {
+                        'ids': [], 
+                        'labels': ['Knows']
+                    }, 
+                    'tgt': {
+                        'alias': 'y', 
+                        'ids': ['n'], 
+                        'labels': ['Person'], 
+                        'properties': [{
+                            'key': 'name', 
+                            'value': '"SK2(" + n.name + ")"'
+                        }]
+                    }
+                }]
+            }
+        )
+
 if __name__ == "__main__":
     unittest.main()

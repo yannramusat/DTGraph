@@ -35,6 +35,7 @@ EdgeConstructor = RightEdgeConstructor | LeftEdgeConstructor
 
 Constructor = EdgeConstructor | NodeConstructor
 RightHandSide = DelimitedList(Group(Constructor), allow_trailing_delim=True)('constructors')
+Rule = SkipTo('=>')('lhs') + '=>' + RightHandSide
 
 if __name__ == "__main__":
     try:
@@ -88,7 +89,7 @@ if __name__ == "__main__":
         res, _ = IDElement.runTests('''
             ##### Test IDElement: #####
             "test" 
-            x
+            xconstructors
             x1.de1 
             Label
         ''')
