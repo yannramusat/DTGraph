@@ -30,4 +30,24 @@ if __name__ == "__main__":
     rule = Rule(lhs="MATCH (n)", rhs="RETURN n")
     print(rule.apply(graph))
 
-    Rule.from_ascii('MATCH(n) => OUTPUT (n)')
+    print(Rule.from_ascii('''
+        MATCH (n) 
+        RETURN n
+        => 
+        (x = (n) : Person {
+            name = "SK1(" + n.name + ")" 
+        })-[(): Knows]->(y = (n) : Person {
+            name = "SK2(" + n.name + ")" 
+        })
+    '''))
+
+    print(Rule.from_ascii( '''
+        (x = (n) : Person {
+            name = "SK1(" + n.name + ")" 
+        })-[(): Knows]->(y = (n) : Person {
+            name = "SK2(" + n.name + ")" 
+        })
+        ''', lhs = ''' 
+        MATCH (n) 
+        RETURN n
+    '''))

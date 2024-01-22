@@ -35,4 +35,4 @@ EdgeConstructor = RightEdgeConstructor | LeftEdgeConstructor
 
 Constructor = EdgeConstructor | NodeConstructor
 RightHandSide = DelimitedList(Group(Constructor), allow_trailing_delim=True)('constructors')
-Rule = SkipTo('=>')('lhs') + '=>' + RightHandSide
+RuleParser = SkipTo('=>')('lhs') + '=>' + RightHandSide

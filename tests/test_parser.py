@@ -1,5 +1,5 @@
-from pyparsing import *
 import unittest
+from pyparsing import *
 from dtgraph.parser import *
 
 class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
@@ -251,9 +251,9 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
             }
         )
 
-    def testRule(self):
+    def testRuleParser(self):
         self.assertParseAndCheckDict(
-            Rule, 
+            RuleParser,
             """
             MATCH (n) 
             RETURN n
