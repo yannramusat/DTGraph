@@ -3,6 +3,61 @@ import unittest
 from dtgraph.parser import *
 
 class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
+    def testConstant(self):
+        self.assertRunTestResults(
+            constant.runTests('''
+                "test"
+                ""
+            ''')
+        )
+        self.assertRunTestResults(
+            constant.runTests('''
+                # Not enclosed inside " quotes ✘
+                test
+                # " not escaped ✘
+                "fjek"fe"
+            ''', failure_tests=True)
+        )
+
+    def testFreevar(self):
+        self.assertRunTestResults(
+            freevar.runTests('''
+                x
+                x1
+            ''')
+        )
+        self.assertRunTestResults(
+            freevar.runTests('''
+                # Capitalized (should not be a label) ✘
+                Label
+                # Cannot start with an integer ✘
+                1ax
+            ''', failure_tests=True)
+        )
+
+    def testAccesskey(self):
+        self.assertRunTestResults(
+            accesskey.runTests('''
+                x.de
+                x.de1
+                x2.de
+                x3.de3
+            ''')
+        )
+        self.assertRunTestResults(
+            accesskey.runTests('''
+                # No attribute ✘
+                x1
+                # Not a variable ✘
+                Label
+                # Should not use const on either side ✘
+                "test".de3
+                x1."test"
+                # Does not work as a const ✘
+                "test.de"
+            ''', failure_tests=True)
+        )
+
     def testIDTuple(self):
         self.assertParseAndCheckDict(
             IDTuple, 
@@ -21,6 +76,31 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
             '()', {
                 'ids': []
             }
+        )
+        self.assertRunTestResults(
+            IDTuple.runTests('''
+                # Should be a comma between the list elements ✘
+                ("c" x.a)
+                # Cannot have only one comma ✘
+                (,)
+            ''', failure_tests=True)
+        )
+
+    def testConstExpression(self):
+        self.assertRunTestResults(
+            ConstExpression.runTests('''
+                "test" + "cc"
+                x.a
+                x1.d2a + "test"
+            ''')
+        )
+        self.assertRunTestResults(
+            ConstExpression.runTests('''
+                # Variables cannot be used inside a constexpression ✘
+                var1
+                # Labels cannot be used inside a constexpression ✘
+                Label
+            ''', failure_tests=True)
         )
     
     def testContentConstructor(self):
