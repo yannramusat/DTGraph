@@ -26,16 +26,30 @@ def compile(dict):
             script += _process_node_constructor(tgt, aliases, missing_aliases)
         else:
             script += _process_node_constructor(constructor, aliases, missing_aliases)
-    print(script)
-    print(aliases)
-    print(missing_aliases)
-    print(dict)
     if missing_aliases:
         raise CompileError("The following aliases are not defined: " + ",".join(missing_aliases))
     # handle edge constructors
     for constructor in dict.get('constructors'):
-        if edge := constructor.get('edge'):
-            pass
+        src, edge, tgt = constructor.get('src'), constructor.get('edge'), constructor.get('tgt')
+        if edge:
+            script += _process_edge_constructor(edge, aliases, src.get('alias'), tgt.get('alias'))
+    return script
+
+def _process_edge_constructor(edge, aliases, src_alias, tgt_alias):
+    alias = edge.get('alias')
+    ids = edge.get('ids')
+    script = ""
+    if alias:
+        raise CompileError("Using alias in edge constructor is forbidden.")
+    alias = f"x_{len(aliases)}"
+    aliases.append(alias)
+    edge['alias'] = alias
+    labels = edge.get('labels')
+    properties = edge.get('properties')
+    if labels is None or len(labels) != 1:
+        raise CompileError("Relationships should have only one type.")
+    script += f'MERGE ({src_alias})-[{alias}:{labels[0]} {{\n    _id: "({labels[0]}:" + { """ + "," + """.join(ids) } + ")" \n}}]->({tgt_alias})\n'
+    script += _process_properties(alias, labels, properties, setLabels=False)
     return script
 
 def _process_node_constructor(node, aliases, missing_aliases):
@@ -55,18 +69,34 @@ def _process_node_constructor(node, aliases, missing_aliases):
                 missing_aliases.remove(alias)
         else:
             alias = f"x_{len(aliases)}"
+            aliases.append(alias)
             node['alias'] = alias
         labels = node.get('labels')
         properties = node.get('properties')
         script += f'MERGE ({alias}:_dummy {{\n    _id: "(" + { """ + "," + """.join(ids) } + ")" \n}})\n'
-        script += f'ON CREATE\n    SET { ",".join([alias + ":" + l for l in labels]) }'
-        if(properties):
-            script += ",\n        "
+        script += _process_properties(alias, labels, properties)
+    return script
+
+def _process_properties(alias, labels, properties, setLabels = True):
+    script = ""
+    if setLabels or properties:
+        script += f'ON CREATE\n'
+        if setLabels:
+            script += f'    SET { ",".join([alias + ":" + l for l in labels]) }'
+        if properties:
+            if setLabels:
+                script += ",\n        "
+            else:
+                script += f'    SET '
             script += ",\n        ".join([alias + "." + p['key'] + " = " + p['value'] for p in properties])
-        script += "\n"
-        script += f'ON MATCH\n    SET { ",".join([alias + ":" + l for l in labels]) }'
-        if(properties):
-            script += ",\n        "
+        script += "\nON MATCH\n"
+        if setLabels:
+            script += f'    SET { ",".join([alias + ":" + l for l in labels]) }'
+        if properties:
+            if setLabels:
+                script += ",\n        "
+            else:
+                script += f'    SET '
             script += ",\n        ".join([_conflict_detection(alias, p) for p in properties])
         script += "\n"
     return script
@@ -91,6 +121,8 @@ if __name__ == "__main__":
         })-[(): Knows]->(y = (n) : Person {
             name = "SK2(" + n.name + ")" 
         }), 
-        (x)-[() : Likes]->(y)
+        (x)-[() : Likes {
+            since = "fixed_date"
+        }]->(y)
     ''')._dict
-    compile(dico)
+    print(compile(dico))
