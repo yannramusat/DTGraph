@@ -57,9 +57,22 @@ def processNodeConstructor(node, aliases, missing_aliases):
         script += f'ON CREATE\n    SET { ",".join([alias + ":" + l for l in labels]) }'
         if(properties):
             script += ",\n        "
-            script += ",\n        ".join([ p['key'] + " = " + p['value'] for p in properties])
+            script += ",\n        ".join([alias + "." + p['key'] + " = " + p['value'] for p in properties])
+        script += "\n"
+        script += f'ON MATCH\n    SET { ",".join([alias + ":" + l for l in labels]) }'
+        if(properties):
+            script += ",\n        "
+            script += ",\n        ".join([conflict_detection(alias, p) for p in properties])
         script += "\n"
     return script
+
+def conflict_detection(alias, p):
+    return (
+        alias + "." + p['key'] + " = \n        CASE WHEN " 
+        + alias + "." + p['key'] + " <> " + p['value'] 
+        + '\n            THEN "Conflict Detected!"\n            ELSE ' 
+        + p["value"]
+    )
 
 if __name__ == "__main__":
     from dtgraph import Rule
