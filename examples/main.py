@@ -22,6 +22,7 @@ if __name__ == "__main__":
     if pa := os.getenv('DTG_PASSWORD'):
         password = pa
 
+    """ 
     uri = f"{scheme}://{hostname}:{port}"
     graph = Neo4jGraph(uri, "neo4j", username=username, password=password, verbose=True)
 
@@ -29,6 +30,7 @@ if __name__ == "__main__":
 
     rule = Rule(lhs="MATCH (n)", rhs="RETURN n")
     print(rule.apply(graph))
+    """
 
     print(Rule.from_ascii('''
         MATCH (n) 

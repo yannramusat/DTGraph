@@ -1,5 +1,4 @@
 from pyparsing import *
-import unittest
 
 # Some voluntary differences with Cypher's syntax: https://neo4j.com/docs/cypher-manual/current/syntax/naming/
 #   - We require variables to begin with a lowercase character.

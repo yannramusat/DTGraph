@@ -3,20 +3,13 @@
 This module contains the `Rule` class for representation of a declarative 
 property graph transformation rule.
 """
-import json
 from dtgraph.parser import RuleParser, RightHandSide
+from dtgraph.compiler import compile
 
 class Rule(object):
     """ Class representing a declarative transformation rule.
 
     (TODO long description for this class)
-    
-    Attributes
-    ----------
-    lhs : string
-        A string representing the lhs of a rule as an executable script.
-    rhs : string
-        A string representing the rhs of a rule as an executable script.
 
     Methods
     -------
@@ -30,15 +23,19 @@ class Rule(object):
     def __init__(self, raw = None, lhs = None, rhs = None, ascii = None):
         """Initializes a rule.
 
+        The type of operation is defined by which arguments are provided.
+        If an invalid combination of arguments is provided, raises an RuleInitializationError exception.
+        Supported combinations: raw; lhs + rhs; lhs + ascii; ascii.
+
         Parameters
         ----------
-        raw : string
+        raw : str
             A string describing the rule as an executable openCypher script.
-        lhs : string
+        lhs : str
             A string describing the lhs of the rule as an executable openCypher script.
-        rhs : string
+        rhs : str
             A string describing the rhs of the rule in openCypher.
-        ascii : string
+        ascii : str
             A string representing the rhs of the rule in ASCII-art style if `lhs` is provided. 
             If `lhs` is not provided, its contains a representation of the entire rule in ASCII-art style.
             In any case, it will be processed by the DSL, and an openCypher script will be obtained
@@ -58,17 +55,18 @@ class Rule(object):
 
     @classmethod
     def from_ascii(cls, ascii, lhs = None):
-        """Create a rule object from an ASCII representation """
+        """Creates a rule object from an ASCII representation. """
         if lhs:
             return cls(lhs = lhs, ascii = ascii)
         else:
             return cls(ascii = ascii)
 
     def _compile(self):
-        pass
+        self._compile = compile(self._dict)
 
     def apply(self, graph):
-        """Perform graph transformation with the rule.
+        """
+        Applies the rule's corresponding openCypher script in the context of a graph transformation scenario.
 
         Parameters
         ----------
