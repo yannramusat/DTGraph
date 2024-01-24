@@ -3,13 +3,16 @@ DTGraph's exception definitions.
 """
 
 class DTGraphException(Exception):
-    """Base DTGraph exceptions class."""
+    """Base DTGraph exception class."""
 
 class ParseError(DTGraphException):
-    """Errors in rule parsing."""
+    """Error in rule parsing."""
 
 class CompileError(DTGraphException):
-    """Errors in rule compilation."""
+    """Error in rule compilation."""
 
 class RunTimeError(DTGraphException):
-    """Errors in rule execution."""
+    """Error in rule execution."""
+
+class RuleInitializationError(DTGraphException):
+    """Error in rule initialization."""

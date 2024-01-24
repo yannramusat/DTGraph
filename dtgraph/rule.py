@@ -5,6 +5,7 @@ property graph transformation rule.
 """
 from dtgraph.parser import RuleParser, RightHandSide
 from dtgraph.compiler import compile
+from dtgraph.exceptions import RuleInitializationError
 
 class Rule(object):
     """ Class representing a declarative transformation rule.
@@ -51,7 +52,7 @@ class Rule(object):
         elif ascii:
             self._dict = RuleParser.parseString(ascii, parseAll=True).asDict()
         else:
-            raise Exception("Invalid rule initialiser")
+            raise RuleInitializationError("Invalid set of parameters.")
 
     @classmethod
     def from_ascii(cls, ascii, lhs = None):

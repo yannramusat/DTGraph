@@ -17,10 +17,9 @@ def compile(dict):
     """
     aliases = []
     missing_aliases = []
-    script = dict['lhs'] + "\n"
+    script = dict['lhs'].strip() + "\n"
     # handle first the node constructors; including node constructors found in edge constructors
     for constructor in dict.get('constructors'):
-        print(constructor)
         src, tgt = constructor.get('src'), constructor.get('tgt')
         if(src):
             script += _process_node_constructor(src, aliases, missing_aliases)
@@ -29,9 +28,14 @@ def compile(dict):
             script += _process_node_constructor(constructor, aliases, missing_aliases)
     print(script)
     print(aliases)
+    print(missing_aliases)
+    print(dict)
     if missing_aliases:
-        CompileError("Missing a definition for the following aliases: " + missing_aliases)
+        raise CompileError("The following aliases are not defined: " + ",".join(missing_aliases))
     # handle edge constructors
+    for constructor in dict.get('constructors'):
+        if edge := constructor.get('edge'):
+            pass
     return script
 
 def _process_node_constructor(node, aliases, missing_aliases):
@@ -45,12 +49,13 @@ def _process_node_constructor(node, aliases, missing_aliases):
     else:
         if alias:
             if alias in aliases:
-                raise CompileError("Multiple definitions of the following alias: " + alias)
+                raise CompileError("Redefinition of the following alias: " + alias)
             aliases.append(alias)
             if alias in missing_aliases:
                 missing_aliases.remove(alias)
         else:
             alias = f"x_{len(aliases)}"
+            node['alias'] = alias
         labels = node.get('labels')
         properties = node.get('properties')
         script += f'MERGE ({alias}:_dummy {{\n    _id: "(" + { """ + "," + """.join(ids) } + ")" \n}})\n'
