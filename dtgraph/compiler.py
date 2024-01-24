@@ -13,7 +13,7 @@ def compile(dict):
     Returns:
     --------
     str
-        An openCypher script implementing the transformation described by dict.
+        An openCypher script implementing the transformation described by the input dictionary.
     """
     aliases = []
     missing_aliases = []
@@ -23,10 +23,10 @@ def compile(dict):
         print(constructor)
         src, tgt = constructor.get('src'), constructor.get('tgt')
         if(src):
-            script += processNodeConstructor(src, aliases, missing_aliases)
-            script += processNodeConstructor(tgt, aliases, missing_aliases)
+            script += _process_node_constructor(src, aliases, missing_aliases)
+            script += _process_node_constructor(tgt, aliases, missing_aliases)
         else:
-            script += processNodeConstructor(constructor, aliases, missing_aliases)
+            script += _process_node_constructor(constructor, aliases, missing_aliases)
     print(script)
     print(aliases)
     if missing_aliases:
@@ -34,7 +34,7 @@ def compile(dict):
     # handle edge constructors
     return script
 
-def processNodeConstructor(node, aliases, missing_aliases):
+def _process_node_constructor(node, aliases, missing_aliases):
     alias = node.get('alias')
     ids = node.get('ids')
     script = ""
@@ -62,11 +62,11 @@ def processNodeConstructor(node, aliases, missing_aliases):
         script += f'ON MATCH\n    SET { ",".join([alias + ":" + l for l in labels]) }'
         if(properties):
             script += ",\n        "
-            script += ",\n        ".join([conflict_detection(alias, p) for p in properties])
+            script += ",\n        ".join([_conflict_detection(alias, p) for p in properties])
         script += "\n"
     return script
 
-def conflict_detection(alias, p):
+def _conflict_detection(alias, p):
     return (
         alias + "." + p['key'] + " = \n        CASE WHEN " 
         + alias + "." + p['key'] + " <> " + p['value'] 
