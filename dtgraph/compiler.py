@@ -47,7 +47,7 @@ def _process_edge_constructor(edge, aliases, src_alias, tgt_alias):
     labels = edge.get('labels')
     properties = edge.get('properties')
     if labels is None or len(labels) != 1:
-        raise CompileError("Relationships should have only one type.")
+        raise CompileError("Relationships should be of only one type.")
     script += f'MERGE ({src_alias})-[{alias}:{labels[0]} {{\n    _id: "({labels[0]}:" + { """ + "," + """.join(ids) } + ")" \n}}]->({tgt_alias})\n'
     script += _process_properties(alias, labels, properties, setLabels=False)
     return script
@@ -73,7 +73,10 @@ def _process_node_constructor(node, aliases, missing_aliases):
             node['alias'] = alias
         labels = node.get('labels')
         properties = node.get('properties')
-        script += f'MERGE ({alias}:_dummy {{\n    _id: "(" + { """ + "," + """.join(ids) } + ")" \n}})\n'
+        script += f'MERGE ({alias}:_dummy {{\n    _id: "("'
+        if ids:
+            script += ' + '
+        script += f'{ """ + "," + """.join(ids) } + ")" \n}})\n'
         script += _process_properties(alias, labels, properties)
     return script
 
@@ -114,7 +117,7 @@ if __name__ == "__main__":
     dico = Rule.from_ascii('''
         MATCH (n) 
         RETURN n
-        => (("c") : Dummy),
+        => (("c", v, w) : Dummy),
         (x = (n) : Person {
             name = "SK1(" + n.name + ")",
             city = "test"
@@ -123,6 +126,11 @@ if __name__ == "__main__":
         }), 
         (x)-[() : Likes {
             since = "fixed_date"
-        }]->(y)
+        }]->(y),
+        (() : Test)
     ''')._dict
     print(compile(dico))
+
+    ## TODO Wrap the identifiers in an argument list to elementID
+    ## TODO include identifiers of the source and the target into the list of arguments of the edge
+    ## TODO avoid having two '+' that follows each other when the argument list is empty
