@@ -47,8 +47,13 @@ def _process_edge_constructor(edge, aliases, src_alias, tgt_alias):
     labels = edge.get('labels')
     properties = edge.get('properties')
     if labels is None or len(labels) != 1:
-        raise CompileError("Relationships should be of only one type.")
-    script += f'MERGE ({src_alias})-[{alias}:{labels[0]} {{\n    _id: "({labels[0]}:" + { """ + "," + """.join(ids) } + ")" \n}}]->({tgt_alias})\n'
+        raise CompileError("Relationships should be of only one type in openCypher.")
+    script += f'MERGE ({src_alias})-[{alias}:{labels[0]} {{\n    ' 
+    idsE = [labels[0]]
+    idsE.extend(ids)
+    idsE.extend([src_alias, tgt_alias])
+    script += _process_ids(idsE)
+    script += f' \n}}]->({tgt_alias})\n'
     script += _process_properties(alias, labels, properties, setLabels=False)
     return script
 
@@ -73,12 +78,28 @@ def _process_node_constructor(node, aliases, missing_aliases):
             node['alias'] = alias
         labels = node.get('labels')
         properties = node.get('properties')
-        script += f'MERGE ({alias}:_dummy {{\n    _id: "("'
-        if ids:
-            script += ' + '
-        script += f'{ """ + "," + """.join(ids) } + ")" \n}})\n'
+        script += f'MERGE ({alias}:_dummy {{\n    '
+        script += _process_ids(ids)
+        script += f' \n}})\n'
         script += _process_properties(alias, labels, properties)
     return script
+
+def _process_ids(ids):
+    script = f'_id: "("'
+    if ids:
+        script += ' + '
+    script += f'{ """ + "," + """.join(map(_wrap_id, ids)) } + ")"'
+    return script
+
+def _wrap_id(id: str):
+    # id[0].islower() rules out both Labels and "constants"; the last check rules out access.keys
+    if id[0].islower() and '.' not in id:
+        return "elementID(" + id + ")"
+    # labels should get enclosed into quotes; we add leading and trailing colons for labels
+    elif id[0].isupper():
+        return '":' + id + ':"'
+    else:
+        return id
 
 def _process_properties(alias, labels, properties, setLabels = True):
     script = ""
@@ -117,20 +138,20 @@ if __name__ == "__main__":
     dico = Rule.from_ascii('''
         MATCH (n) 
         RETURN n
-        => (("c", v, w) : Dummy),
+        => (("c", v.fff, w) : Dummy),
         (x = (n) : Person {
             name = "SK1(" + n.name + ")",
             city = "test"
         })-[(): Knows]->(y = (n) : Person {
             name = "SK2(" + n.name + ")" 
         }), 
-        (x)-[() : Likes {
-            since = "fixed_date"
+        (x)-[(v) : Likes {
+            since = "01/01/1970"
         }]->(y),
         (() : Test)
     ''')._dict
     print(compile(dico))
 
-    ## TODO Wrap the identifiers in an argument list to elementID
-    ## TODO include identifiers of the source and the target into the list of arguments of the edge
-    ## TODO avoid having two '+' that follows each other when the argument list is empty
+    ## Wrap the identifiers in an argument list to elementID
+    ## include identifiers of the source and the target into the list of arguments of the edge
+    ## avoid having two '+' that follows each other when the argument list is empty
