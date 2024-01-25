@@ -14,7 +14,7 @@ class Rule(object):
 
     Methods
     -------
-    apply(graph)
+    apply_on(graph)
         Execute the query on the Neo4jGraph
     """
 
@@ -63,17 +63,19 @@ class Rule(object):
             return cls(ascii = ascii)
 
     def _compile(self):
-        self._compile = compile(self._dict)
+        self._compiled = compile(self._dict)
 
-    def apply(self, graph):
+    def apply_on(self, graph):
         """
-        Applies the rule's corresponding openCypher script in the context of a graph transformation scenario.
+        Applies the rule on the given graph, in the context of a graph transformation scenario.
 
         Parameters
         ----------
         graph : dtgraph.backend.neo4j.graph.Neo4jGraph
             Graph to be transformed by the rule.
         """
+        if self._compiled is None:
+            self._compile()
         return graph.query(self._compiled)
 
     def __str__(self):
