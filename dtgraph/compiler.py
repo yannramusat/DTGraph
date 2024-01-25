@@ -1,6 +1,6 @@
 from dtgraph.exceptions import CompileError
 
-def compile(dict):
+def compile(dict) -> str:
     """Compiles a rule.
 
     Raises a CompileError if something went wrong.
@@ -35,7 +35,7 @@ def compile(dict):
             script += _process_edge_constructor(edge, aliases, src.get('alias'), tgt.get('alias'))
     return script
 
-def _process_edge_constructor(edge, aliases, src_alias, tgt_alias):
+def _process_edge_constructor(edge, aliases: list[str], src_alias: str, tgt_alias: str) -> str:
     alias = edge.get('alias')
     ids = edge.get('ids')
     script = ""
@@ -57,7 +57,7 @@ def _process_edge_constructor(edge, aliases, src_alias, tgt_alias):
     script += _process_properties(alias, labels, properties, setLabels=False)
     return script
 
-def _process_node_constructor(node, aliases, missing_aliases):
+def _process_node_constructor(node, aliases: list[str], missing_aliases: list[str]) -> str:
     alias = node.get('alias')
     ids = node.get('ids')
     script = ""
@@ -84,14 +84,14 @@ def _process_node_constructor(node, aliases, missing_aliases):
         script += _process_properties(alias, labels, properties)
     return script
 
-def _process_ids(ids):
+def _process_ids(ids: list[str]) -> str:
     script = f'_id: "("'
     if ids:
         script += ' + '
     script += f'{ """ + "," + """.join(map(_wrap_id, ids)) } + ")"'
     return script
 
-def _wrap_id(id: str):
+def _wrap_id(id: str) -> str:
     # id[0].islower() rules out both Labels and "constants"; the last check rules out access.keys
     if id[0].islower() and '.' not in id:
         return "elementID(" + id + ")"
@@ -101,7 +101,7 @@ def _wrap_id(id: str):
     else:
         return id
 
-def _process_properties(alias, labels, properties, setLabels = True):
+def _process_properties(alias: str, labels: list[str], properties: list[dict[str, str]], setLabels: bool = True) -> str:
     script = ""
     if setLabels or properties:
         script += f'ON CREATE\n'
@@ -125,12 +125,12 @@ def _process_properties(alias, labels, properties, setLabels = True):
         script += "\n"
     return script
 
-def _conflict_detection(alias, p):
+def _conflict_detection(alias: str, p: dict[str, str]) -> str:
     return (
-        alias + "." + p['key'] + " = \n        CASE WHEN " 
+        alias + "." + p['key'] + " = \n        CASE\n            WHEN " 
         + alias + "." + p['key'] + " <> " + p['value'] 
-        + '\n            THEN "Conflict Detected!"\n            ELSE ' 
-        + p["value"]
+        + ' THEN\n                "Conflict Detected!"\n            ELSE\n                ' 
+        + p["value"] + "\n        END"
     )
 
 if __name__ == "__main__":
@@ -151,7 +151,3 @@ if __name__ == "__main__":
         (() : Test)
     ''')._dict
     print(compile(dico))
-
-    ## Wrap the identifiers in an argument list to elementID
-    ## include identifiers of the source and the target into the list of arguments of the edge
-    ## avoid having two '+' that follows each other when the argument list is empty
