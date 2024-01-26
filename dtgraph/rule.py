@@ -76,7 +76,7 @@ class Rule(object):
         """
         if self._compiled is None:
             self._compile()
-        return graph.query(self._compiled)
+        return graph.queryCompat(self._compiled)
 
     def __str__(self):
         repr = ""

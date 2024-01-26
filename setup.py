@@ -24,8 +24,11 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    python_requires='>=3.8.0,<=3.10.13',
     install_requires = [
         "neo4j",
         "pyparsing",
+        "graph-notebook",
+        "jupyterlab>=3,<4",
     ],
 )

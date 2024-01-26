@@ -76,6 +76,28 @@ class Neo4jGraph(object):
                   f"set {summary.counters.properties_set} properties, created {summary.counters.relationships_created} relationships, completed after {summary.result_available_after} ms.")
         return summary.result_available_after
 
+    #https://neo4j.com/docs/api/python-driver/4.4/#quick-example
+    def get_friends_of(self, tx):
+        numofnodes = 0
+        result = tx.run("MATCH (n)"
+                        "RETURN n")
+        for record in result:
+            numofnodes = numofnodes + 1
+        return numofnodes
+        
+    def getAllNodes(self):
+        with self.driver.session() as session:
+            friends = session.read_transaction(self.get_friends_of)
+            print(friends)
+    
+    def inner(self, tx, query):
+        tx.run(query)
+
+    def queryCompat(self, query):
+        with self.driver.session() as session:
+            session.write_transaction(self.inner, query)
+        self.driver.close()
+
     def addIndex(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
                 query,

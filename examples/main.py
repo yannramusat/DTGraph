@@ -25,7 +25,8 @@ if __name__ == "__main__":
     uri = f"{scheme}://{hostname}:{port}"
     graph = Neo4jGraph(uri, "neo4j", username=username, password=password, verbose=True)
 
-    graph.output_all_nodes()
+    #graph.output_all_nodes()
+    graph.getAllNodes()
 
     my_query = Rule.from_ascii('''
         MATCH (n:Person)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(o:Person)
