@@ -23,11 +23,14 @@ if __name__ == "__main__":
         password = pa
 
     uri = f"{scheme}://{hostname}:{port}"
-    graph = Neo4jGraph(uri, "neo4j", username=username, password=password, verbose=True)
+    graph = Neo4jGraph(uri, "neo4j", username=username, password=password)
 
     graph.output_all_nodes()
 
-    my_query = Rule.from_ascii('''
+    from dtgraph.scenarios.movies import Movies
+    Movies.load(graph)
+
+    my_query = Rule('''
         MATCH (n:Person)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(o:Person)
         => 
         (x = (n) : Actor {
@@ -41,23 +44,3 @@ if __name__ == "__main__":
         })
     ''')
     my_query.apply_on(graph)
-
-    """ print(Rule.from_ascii('''
-        MATCH (n)
-        => 
-        (x = (n) : Person {
-            name = "SK1(" + n.name + ")" 
-        })-[(): Knows]->(y = (n) : Person {
-            name = "SK2(" + n.name + ")" 
-        })
-    '''))
-
-    print(Rule.from_ascii( '''
-        (x = (n) : Person {
-            name = "SK1(" + n.name + ")" 
-        })-[(): Knows]->(y = (n) : Person {
-            name = "SK2(" + n.name + ")" 
-        })
-        ''', lhs = ''' 
-        MATCH (n) 
-    ''')) """

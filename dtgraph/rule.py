@@ -21,7 +21,7 @@ class Rule(object):
     _dict = None
     _compiled = None
 
-    def __init__(self, raw = None, lhs = None, rhs = None, ascii = None):
+    def __init__(self, ascii = None, raw = None, lhs = None, rhs = None):
         """Initializes a rule.
 
         The type of operation is defined by which arguments are provided.
@@ -30,17 +30,17 @@ class Rule(object):
 
         Parameters
         ----------
+        ascii : str
+            A string representing the rhs of the rule in ASCII-art style if `lhs` is provided. 
+            If `lhs` is not provided, its contains a representation of the entire rule in ASCII-art style.
+            In any case, it will be processed by the DSL, and an openCypher script will be obtained
+            from it.
         raw : str
             A string describing the rule as an executable openCypher script.
         lhs : str
             A string describing the lhs of the rule as an executable openCypher script.
         rhs : str
             A string describing the rhs of the rule in openCypher.
-        ascii : str
-            A string representing the rhs of the rule in ASCII-art style if `lhs` is provided. 
-            If `lhs` is not provided, its contains a representation of the entire rule in ASCII-art style.
-            In any case, it will be processed by the DSL, and an openCypher script will be obtained
-            from it.
         """
         if raw:
             self._compiled = raw
@@ -61,6 +61,11 @@ class Rule(object):
             return cls(lhs = lhs, ascii = ascii)
         else:
             return cls(ascii = ascii)
+    
+    @classmethod
+    def from_raw(cls, raw):
+        """Creates a rule object from a raw representation. """
+        return cls(raw = raw)
 
     def _compile(self):
         self._compiled = compile(self._dict)
@@ -76,7 +81,7 @@ class Rule(object):
         """
         if self._compiled is None:
             self._compile()
-        return graph.query(self._compiled)
+        _ = graph.exec_rule(self._compiled, stats=True)
 
     def __str__(self):
         repr = ""
