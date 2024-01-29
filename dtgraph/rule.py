@@ -15,7 +15,7 @@ class Rule(object):
     Methods
     -------
     apply_on(graph)
-        Execute the query on the Neo4jGraph
+        Execute the query on the Neo4jGraph.
     """
 
     _dict = None

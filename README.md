@@ -6,7 +6,7 @@ A tool for performing declarative transformations of property graphs.
 
 The **DTGraph** library is a generic framework for transforming property graphs.
 Transformations are written in our own declarative rule-based DSL (Domain Specific Language) and are compiled into efficient and scalable openCypher scripts.
-It supports a wide range of openCypher's compatible backends.
+This library supports a wide range of openCypher's compatible backends.
 
 ## Installation
 
@@ -19,7 +19,7 @@ or using HTTPS:
 https://github.com/yannramusat/DTGraph.git
 ```
 
-Install the library using Python's setup tools:
+Then, install the library using Python's setup tools:
 ```
 pip install .
 ```
@@ -40,7 +40,7 @@ There are several supported ways to connect to a database instance:
 
 ## Tutorials
 
-We provide some tutorials in the form of Jupyter notebooks (.ipynb files). To open these files, you will need to install **Jupyter labs**:
+We provide some tutorials in the form of *Jupyter notebooks* (.ipynb files). To open these files, you will need to install **Jupyter labs**:
 ```
 pip install jupyterlab
 ```

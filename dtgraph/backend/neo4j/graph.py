@@ -108,7 +108,7 @@ class Neo4jGraph(object):
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
-            print(f"Idx:    Added {summary.counters.indexes_added} index, completed after {summary.result_available_after} ms.")
+            print(f"Index: Added {summary.counters.indexes_added} index, completed after {summary.result_available_after} ms.")
 
     def dropIndex(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
@@ -118,7 +118,7 @@ class Neo4jGraph(object):
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
-            print(f"Idx:    Removed {summary.counters.indexes_removed} index, completed after {summary.result_available_after} ms.") 
+            print(f"Index: Removed {summary.counters.indexes_removed} index, completed after {summary.result_available_after} ms.") 
 
     def addConstraint(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(

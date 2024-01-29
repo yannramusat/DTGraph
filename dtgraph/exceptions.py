@@ -16,3 +16,6 @@ class RunTimeError(DTGraphException):
 
 class RuleInitializationError(DTGraphException):
     """Error in rule initialization."""
+
+class TransformationActivationError(DTGraphException):
+    """Error in transformation activation."""

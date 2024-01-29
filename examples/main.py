@@ -1,6 +1,6 @@
 #!/bin/env python3
 import os
-from dtgraph import Neo4jGraph, Rule
+from dtgraph import Neo4jGraph, Rule, Transformation
 
 if __name__ == "__main__":
     # Defaults for local development
@@ -30,8 +30,9 @@ if __name__ == "__main__":
     from dtgraph.scenarios.movies import Movies
     Movies.load(graph)
 
-    my_query = Rule('''
+    my_rule = Rule('''
         MATCH (n:Person)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(o:Person)
+        WHERE n.born < o.born
         => 
         (x = (n) : Actor {
             name = n.name,
@@ -43,4 +44,7 @@ if __name__ == "__main__":
             born = o.born
         })
     ''')
-    my_query.apply_on(graph)
+
+    my_transform = Transformation([my_rule])
+    my_transform.apply_on(graph)
+    my_transform.eject()
