@@ -50,6 +50,18 @@ class Transformation(object):
         """
         self._rules = rules
 
+    def add(self, rule):
+        """Add this rule to the transformation. If the transformation is active, this rule is executed.
+
+        Parameters:
+        -----------
+        rule : dtgraph.rule.Rule
+            New rule to add to the transformation.
+        """
+        self._rules.append(rule)
+        if self._graph:
+            rule.apply_on(self._graph)
+
     def apply_on(self, graph):
         """
         Applies all the rule on the given graph.
@@ -84,3 +96,5 @@ class Transformation(object):
         DROP INDEX idx_dummy IF EXISTS
         """
         self._graph.dropIndex(dropDummy, stats=True)
+        # finally, set the transformation a inactive
+        self._graph = None

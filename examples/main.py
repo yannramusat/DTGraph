@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     my_rule = Rule('''
         MATCH (n:Person)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(o:Person)
-        WHERE n.born < o.born
+        WHERE n.name < o.name
         => 
         (x = (n) : Actor {
             name = n.name,
@@ -47,4 +47,22 @@ if __name__ == "__main__":
 
     my_transform = Transformation([my_rule])
     my_transform.apply_on(graph)
+
+    my_second_rule = Rule('''
+        MATCH (d:Person)-[:DIRECTED]->(m:Movie)<-[:ACTED_IN]-(a:Person)
+        =>
+        (x = (d) : Director {
+            name = d.name,
+            born = d.born
+        })-[(m) : SUPERVISED {
+            movie = m.title
+        }]->(y = (a) : Actor {
+            name = a.name,
+            born = a.born
+        })
+    ''')
+    my_transform.add(my_second_rule)
+
+    ## for instance `James Marshall is both a Director and an Actor.
+
     my_transform.eject()
