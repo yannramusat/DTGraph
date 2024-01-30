@@ -96,5 +96,6 @@ class Transformation(object):
         DROP INDEX idx_dummy IF EXISTS
         """
         self._graph.dropIndex(dropDummy, stats=True)
-        # finally, set the transformation a inactive
+        self._graph.remove_bookkeeping(stats=True)
+        # finally, set the transformation to be inactive
         self._graph = None
