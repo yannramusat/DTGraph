@@ -39,6 +39,22 @@ class Neo4jGraph(object):
             self.print_query_stats(records, summary, keys)
         print(f"Flushed database: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
 
+    def remove_bookkeeping(self, stats=False):
+        remove_query = """
+        MATCH ()-[r]->()
+        REMOVE r._id
+        WITH *
+        MATCH (n:`_dummy`)
+        REMOVE n:_dummy, n._id
+        """
+        records, summary, keys = self.driver.execute_query(
+                remove_query,
+                database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(stats):
+            print(f"Eject: Removed {summary.counters.labels_removed} labels, erased {summary.counters.properties_set} properties, completed after {summary.result_available_after} ms.")
+
     def populate_with_csv(self, path_to_csv_file, mergeCMD, fieldterminator="|", stats=False):
         populate_query = f"LOAD CSV FROM '{path_to_csv_file}' as row FIELDTERMINATOR '{fieldterminator}' " + mergeCMD
         records, summary, keys = self.driver.execute_query(
