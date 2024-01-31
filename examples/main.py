@@ -9,6 +9,7 @@ if __name__ == "__main__":
     port = "7687"
     username = "neo4j"
     password = "password"
+    database = "neo4j"
     # Using env. Useful for overriding previous
     # values when using a Neo4j sandbox
     if s := os.getenv('DTG_SCHEME'):
@@ -21,9 +22,11 @@ if __name__ == "__main__":
         username = u
     if pa := os.getenv('DTG_PASSWORD'):
         password = pa
+    if d := os.getenv('DTG_DATABASE'):
+        database = d
 
     uri = f"{scheme}://{hostname}:{port}"
-    graph = Neo4jGraph(uri, "neo4j", username=username, password=password)
+    graph = Neo4jGraph(uri, database=database, username=username, password=password)
 
     graph.output_all_nodes()
 
