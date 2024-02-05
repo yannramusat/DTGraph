@@ -25,13 +25,14 @@ class Transformation(object):
         Execute the query on the Neo4jGraph. The transformation is activated.
     diagnose
         Print information about conflicts.
-    eject
+    eject(destrutive = False)
         Removes internal bookeeping data (if any). The transformation is deactivated.
         This is useful if you want to keep both the input and output for later use.
+    exec(graph, destructive = False)
+        Delete source data and eject internal data. The transformation is deactivated.
     revert
         Revert the transformation and removes output data from the underlying graph. The transformation is deactivated.
-    validate
-        Delete source data and eject internal data. The transformation is deactivated.
+
     """
 
     _graph = None # when not none the transformation is active
@@ -62,6 +63,25 @@ class Transformation(object):
         if self._graph:
             rule.apply_on(self._graph)
 
+    def exec(self, graph, destructive = False):
+        """
+        Applies the transformation on the given graph,
+        and immediately call eject(destructive).
+
+        Parameters
+        ----------
+        graph : dtgraph.backend.neo4j.graph.Neo4jGraph
+            Graph to be transformed by the rules.
+        destructive : bool
+            Whether or not eject should remove input data.
+        """
+        self.apply_on(graph)
+        self.eject(destructive=destructive)
+    
+    def __call__(self, *args, **kwargs):
+        """See `exec`."""
+        self.exec(*args, **kwargs)
+
     def apply_on(self, graph):
         """
         Applies all the rule on the given graph.
@@ -81,9 +101,7 @@ class Transformation(object):
             r.apply_on(self._graph)
 
     def _pre_apply(self):
-        """
-        Sets-up the environment for executing the transformation.
-        """
+        """Sets-up the environment for executing the transformation."""
         indexDummy = """
         CREATE INDEX idx_dummy IF NOT EXISTS
         FOR (n:_dummy)
@@ -91,7 +109,17 @@ class Transformation(object):
         """
         self._graph.addIndex(indexDummy, stats=True)
 
-    def eject(self):
+    def eject(self, destructive = False):
+        """
+        Removes all internal data on the current active graph. 
+        Deactivates the transformation.
+        Optionally removes input data if destructive is set to True.
+
+        Parameters
+        ----------
+        destructive : bool
+            Whether or not eject should remove input data.
+        """
         dropDummy = """
         DROP INDEX idx_dummy IF EXISTS
         """

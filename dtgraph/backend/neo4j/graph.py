@@ -4,6 +4,7 @@ class Neo4jGraph(object):
     """Class reflecting a Neo4j graph instance.
 
     This class encapsulates a neo4j.GraphDatabase object.
+    Note that it also supports other openCypher compatible backends such as Memgraph.
     """
 
     def __init__(self, uri, database, username=None, password=None, verbose=False):

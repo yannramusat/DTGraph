@@ -65,7 +65,13 @@ if __name__ == "__main__":
         })
     ''')
     my_transform.add(my_second_rule)
-
-    ## for instance `James Marshall is both a Director and an Actor.
-
+    ## We can see that `James Marshall is both a Director and an Actor.
     my_transform.eject()
+
+    # second round
+    graph.output_all_nodes()
+    my_transform.exec(graph)
+
+    # third round
+    graph.output_all_nodes()
+    my_transform(graph)
