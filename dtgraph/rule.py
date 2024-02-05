@@ -4,7 +4,7 @@ This module contains the `Rule` class for representation of a declarative
 property graph transformation rule.
 """
 from dtgraph.parser import RuleParser, RightHandSide
-from dtgraph.compiler import compile
+from dtgraph.compiler import Compiler
 from dtgraph.exceptions import RuleInitializationError
 
 class Rule(object):
@@ -67,8 +67,9 @@ class Rule(object):
         """Creates a rule object from a raw representation. """
         return cls(raw = raw)
 
-    def _compile(self):
-        self._compiled = compile(self._dict)
+    def _compile(self, database="neo4j"):
+        compiler = Compiler(database)
+        self._compiled = compiler.compile(self._dict)
 
     def apply_on(self, graph):
         """
@@ -80,7 +81,7 @@ class Rule(object):
             Graph to be transformed by the rule.
         """
         if self._compiled is None:
-            self._compile()
+            self._compile(graph.database)
         _ = graph.exec_rule(self._compiled, stats=True)
 
     def __str__(self):

@@ -13,26 +13,30 @@ from dtgraph.rule import Rule
 from dtgraph.exceptions import TransformationActivationError
 
 class Transformation(object):
-    """This class represents a declarative transformation. It manages a set of rules.
-
-    (TODO long description for this class)
+    """
+    This class represents a declarative transformation. 
+    It manages a set of rules.
 
     Methods
     -------
     add(rule)
-        Add this rule to the transformation. If the transformation is active, this rule is executed.
+        Add this rule to the transformation. 
+        If the transformation is active, this rule is executed.
     apply_on(graph)
-        Execute the query on the Neo4jGraph. The transformation is activated.
+        Execute the query on the Neo4jGraph. 
+        The transformation is activated.
     diagnose
         Print information about conflicts.
     eject(destrutive = False)
-        Removes internal bookeeping data (if any). The transformation is deactivated.
+        Removes internal bookeeping data (if any). 
+        The transformation is deactivated.
         This is useful if you want to keep both the input and output for later use.
     exec(graph, destructive = False)
-        Delete source data and eject internal data. The transformation is deactivated.
+        Delete source data and eject internal data. 
+        The transformation is deactivated.
     revert
-        Revert the transformation and removes output data from the underlying graph. The transformation is deactivated.
-
+        Revert the transformation and removes output data from the underlying graph. 
+        The transformation is deactivated.
     """
 
     _graph = None # when not none the transformation is active
@@ -41,7 +45,8 @@ class Transformation(object):
         """Initializes a transformation.
 
         The type of operation is defined by which arguments are provided.
-        If an invalid combination of arguments is provided, raises an RuleInitializationError exception.
+        If an invalid combination of arguments is provided, 
+        raises an RuleInitializationError exception.
         Supported combinations: raw; lhs + rhs; lhs + ascii; ascii.
 
         Parameters
@@ -52,7 +57,9 @@ class Transformation(object):
         self._rules = rules
 
     def add(self, rule):
-        """Add this rule to the transformation. If the transformation is active, this rule is executed.
+        """
+        Add this rule to the transformation. 
+        If the transformation is active, this rule is executed.
 
         Parameters:
         -----------
@@ -102,23 +109,28 @@ class Transformation(object):
 
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
-        indexDummy = """
-        CREATE INDEX idx_dummy IF NOT EXISTS
-        FOR (n:_dummy)
-        ON (n._id)
-        """
         if self._graph is None:
             raise TransformationDeactivationError("This transformation is not currently active.")
-        self._graph.addIndex(indexDummy, stats=True)
-
+        elif self._graph.database == "neo4j":
+            indexDummy = """
+            CREATE INDEX idx_dummy IF NOT EXISTS
+            FOR (n:_dummy)
+            ON (n._id)
+            """
+            self._graph.addIndex(indexDummy, stats=True)
+        elif self._graph.database == "memgraph":
+            with self._graph.driver.session(database="memgraph") as session:
+                session.run("CREATE INDEX ON :_dummy(_id)")
+        
     def _pre_eject(self):
-        """Destroys the environment for executing the transformation."""
-        dropDummy = """
-        DROP INDEX idx_dummy IF EXISTS
-        """
+        """Destroys the transformation's execution environment."""
         if self._graph is None:
             raise TransformationDeactivationError("This transformation is not currently active.")
-        self._graph.dropIndex(dropDummy, stats=True)
+        elif self._graph.database == "neo4j":
+            self._graph.dropIndex("DROP INDEX idx_dummy IF EXISTS", stats=True)
+        elif self._graph.database == "memgraph":
+            with self._graph.driver.session(database="memgraph") as session:
+                session.run("DROP INDEX ON :_dummy(_id)")
 
     def eject(self, destructive = False):
         """
