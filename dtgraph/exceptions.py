@@ -19,3 +19,6 @@ class RuleInitializationError(DTGraphException):
 
 class TransformationActivationError(DTGraphException):
     """Error in transformation activation."""
+
+class TransformationDeactivationError(DTGraphException):
+    """Error in transformation deactivation."""

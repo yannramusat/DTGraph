@@ -40,6 +40,19 @@ class Neo4jGraph(object):
             self.print_query_stats(records, summary, keys)
         print(f"Flushed database: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
 
+    def abort(self, stats=False):
+        abort_query = """
+        MATCH (n:`_dummy`)
+        DETACH DELETE n
+        """
+        records, summary, keys = self.driver.execute_query(
+                abort_query,
+                database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(stats):
+            print(f"Abort: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
+    
     def remove_bookkeeping(self, stats=False):
         remove_query = """
         MATCH ()-[r]->()

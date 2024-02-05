@@ -107,12 +107,23 @@ class Transformation(object):
         FOR (n:_dummy)
         ON (n._id)
         """
+        if self._graph is None:
+            raise TransformationDeactivationError("This transformation is not currently active.")
         self._graph.addIndex(indexDummy, stats=True)
+
+    def _pre_eject(self):
+        """Destroys the environment for executing the transformation."""
+        dropDummy = """
+        DROP INDEX idx_dummy IF EXISTS
+        """
+        if self._graph is None:
+            raise TransformationDeactivationError("This transformation is not currently active.")
+        self._graph.dropIndex(dropDummy, stats=True)
 
     def eject(self, destructive = False):
         """
-        Removes all internal data on the current active graph. 
-        Deactivates the transformation.
+        Removes all internal data on the current active graph, 
+        and deactivates the transformation.
         Optionally removes input data if destructive is set to True.
 
         Parameters
@@ -120,10 +131,21 @@ class Transformation(object):
         destructive : bool
             Whether or not eject should remove input data.
         """
-        dropDummy = """
-        DROP INDEX idx_dummy IF EXISTS
-        """
-        self._graph.dropIndex(dropDummy, stats=True)
+        self._pre_eject()
+        if self._graph is None:
+            raise TransformationDeactivationError("This transformation is not currently active.")
         self._graph.remove_bookkeeping(stats=True)
+        # finally, set the transformation to be inactive
+        self._graph = None
+
+    def abort(self):
+        """
+        Removes all current output data for the active transformation,
+        and deactivates the transformation.
+        """
+        self._pre_eject()
+        if self._graph is None:
+            raise TransformationDeactivationError("This transformation is not currently active.")
+        self._graph.abort(stats=True)
         # finally, set the transformation to be inactive
         self._graph = None

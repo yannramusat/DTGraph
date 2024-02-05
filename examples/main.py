@@ -72,6 +72,14 @@ if __name__ == "__main__":
     graph.output_all_nodes()
     my_transform.exec(graph)
 
+    # abort round
+    graph.output_all_nodes()
+    my_transform.apply_on(graph)
+    my_transform.abort()
+
     # third round
     graph.output_all_nodes()
     my_transform(graph)
+
+    # final printing
+    graph.output_all_nodes()
