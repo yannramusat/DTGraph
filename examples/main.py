@@ -81,5 +81,13 @@ if __name__ == "__main__":
     graph.output_all_nodes()
     my_transform(graph)
 
+    # fourth round
+    graph.output_all_nodes()
+    my_transform(graph, destructive=True)
+
+    # fifth round
+    graph.output_all_nodes()
+    my_transform(graph)
+
     # final printing
     graph.output_all_nodes()

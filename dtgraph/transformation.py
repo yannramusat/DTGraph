@@ -134,6 +134,8 @@ class Transformation(object):
         self._pre_eject()
         if self._graph is None:
             raise TransformationDeactivationError("This transformation is not currently active.")
+        if destructive:
+            self._graph.destruct_input(stats=True)
         self._graph.remove_bookkeeping(stats=True)
         # finally, set the transformation to be inactive
         self._graph = None

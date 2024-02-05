@@ -26,16 +26,15 @@ class Neo4jGraph(object):
         print("The query `{query}` returned {records_count} records in {time} ms.".format(
             query=summary.query, 
             records_count=len(records),
-            time=summary.result_available_after,
-            ))
+            time=summary.result_available_after))
 
     def flush_database(self):
         flush_query = """
         MATCH (n) DETACH DELETE(n)
         """
         records, summary, keys = self.driver.execute_query(
-                flush_query,
-                database=self.database)
+            flush_query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         print(f"Flushed database: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
@@ -46,13 +45,27 @@ class Neo4jGraph(object):
         DETACH DELETE n
         """
         records, summary, keys = self.driver.execute_query(
-                abort_query,
-                database=self.database)
+            abort_query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(stats):
             print(f"Abort: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
     
+    def destruct_input(self, stats = False):
+        destruct_query = """
+        MATCH (n)
+        WHERE NOT n:`_dummy`
+        DETACH DELETE n
+        """
+        records, summary, keys = self.driver.execute_query(
+            destruct_query,
+            database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(stats):
+            print(f"Destruct: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
+
     def remove_bookkeeping(self, stats=False):
         remove_query = """
         MATCH ()-[r]->()
@@ -62,8 +75,8 @@ class Neo4jGraph(object):
         REMOVE n:_dummy, n._id
         """
         records, summary, keys = self.driver.execute_query(
-                remove_query,
-                database=self.database)
+            remove_query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(stats):
@@ -72,9 +85,8 @@ class Neo4jGraph(object):
     def populate_with_csv(self, path_to_csv_file, mergeCMD, fieldterminator="|", stats=False):
         populate_query = f"LOAD CSV FROM '{path_to_csv_file}' as row FIELDTERMINATOR '{fieldterminator}' " + mergeCMD
         records, summary, keys = self.driver.execute_query(
-                populate_query,
-                database=self.database,
-                )
+            populate_query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):    
@@ -87,9 +99,8 @@ class Neo4jGraph(object):
         RETURN COUNT(n) as count
         """
         records, summary, keys = self.driver.execute_query(
-                count_all_query,
-                database=self.database,
-                )
+            count_all_query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
@@ -97,9 +108,8 @@ class Neo4jGraph(object):
 
     def query(self, query):
         records, summary, keys = self.driver.execute_query(
-                query,
-                database=self.database,
-                )
+            query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
             print(f"Query:  Added {summary.counters.labels_added} labels, created {summary.counters.nodes_created} nodes, " 
@@ -108,9 +118,8 @@ class Neo4jGraph(object):
     
     def load_scenario_script(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
-                query,
-                database=self.database,
-                )
+            query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
@@ -120,9 +129,8 @@ class Neo4jGraph(object):
     
     def exec_rule(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
-                query,
-                database=self.database,
-                )
+            query,
+            database=self.database)
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
@@ -169,5 +177,3 @@ class Neo4jGraph(object):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
             print(f"Cns:    Removed {summary.counters.constraints_removed} constraint, completed after {summary.result_available_after} ms.") 
-
-
