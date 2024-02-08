@@ -107,21 +107,21 @@ class Compiler:
 
     def _process_properties(self, alias: str, labels: list[str], properties: list[dict[str, str]], setLabels: bool = True) -> str:
         script = ""
-        if setLabels or properties:
+        if (setLabels and labels) or properties:
             script += f'ON CREATE\n'
-            if setLabels:
+            if setLabels and labels:
                 script += f'    SET { ",".join([alias + ":" + l for l in labels]) }'
             if properties:
-                if setLabels:
+                if setLabels and labels:
                     script += ",\n        "
                 else:
                     script += f'    SET '
                 script += ",\n        ".join([alias + "." + p['key'] + " = " + p['value'] for p in properties])
             script += "\nON MATCH\n"
-            if setLabels:
+            if setLabels and labels:
                 script += f'    SET { ",".join([alias + ":" + l for l in labels]) }'
             if properties:
-                if setLabels:
+                if setLabels and labels:
                     script += ",\n        "
                 else:
                     script += f'    SET '
