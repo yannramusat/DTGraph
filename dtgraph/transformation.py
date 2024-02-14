@@ -14,40 +14,33 @@ from dtgraph.exceptions import TransformationActivationError
 
 class Transformation(object):
     """
-    This class represents a declarative transformation. 
-    It manages a set of rules.
+    This class represents a declarative transformation defined by a list of rules.
 
     Methods
     -------
+    abort()
+        Abort the transformation by removing output data from the underlying graph. 
+        The transformation is deactivated.
     add(rule)
         Add this rule to the transformation. 
         If the transformation is active, this rule is executed.
     apply_on(graph)
-        Execute the query on the Neo4jGraph. 
+        Execute the query on the Neo4jGraph graph. 
         The transformation is activated.
-    diagnose
-        Print information about conflicts.
     eject(destrutive = False)
         Removes internal bookeeping data (if any). 
         The transformation is deactivated.
         This is useful if you want to keep both the input and output for later use.
     exec(graph, destructive = False)
-        Delete source data and eject internal data. 
-        The transformation is deactivated.
-    revert
-        Revert the transformation and removes output data from the underlying graph. 
+        Performs apply_on(graph) followed by eject(destructive)
         The transformation is deactivated.
     """
 
-    _graph = None # when not none the transformation is active
+    _graph = None # when not none, stores a Neo4jGraph object on which the transformation is currently active
 
     def __init__(self, rules):
-        """Initializes a transformation.
-
-        The type of operation is defined by which arguments are provided.
-        If an invalid combination of arguments is provided, 
-        raises an RuleInitializationError exception.
-        Supported combinations: raw; lhs + rhs; lhs + ascii; ascii.
+        """
+        Initializes a transformation with a list of rules.
 
         Parameters
         ----------
