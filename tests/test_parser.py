@@ -3,6 +3,8 @@ from pyparsing import *
 from dtgraph.parser import *
 
 class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
+    maxDiff = None
+
     def testConstant(self):
         self.assertRunTestResults(
             constant.runTests('''
@@ -257,14 +259,14 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
             """
             MATCH (n) 
             RETURN n
-            => 
+            GENERATE
             (x = (n) : Person {
                 name = "SK1(" + n.name + ")" 
             })-[(): Knows]->(y = (n) : Person {
                 name = "SK2(" + n.name + ")" 
             })
             """, {
-                'lhs': 'MATCH (n) \n            RETURN n\n            ',
+                'lhs': 'MATCH (n) \n            RETURN n',
                 'constructors': [{
                     'src': {
                         'alias': 'x', 
@@ -288,6 +290,29 @@ class DSLTestCase(pyparsing_test.TestParseResultsAsserts, unittest.TestCase):
                             'value': '"SK2(" + n.name + ")"'
                         }]
                     }
+                }]
+            }
+        )
+
+        self.assertParseAndCheckDict(
+            RuleParser,
+            """
+            MATCH (n) 
+            RETURN n
+            =>
+            (x = (n) : Person {
+                name = "SK1(" + n.name + ")" 
+            })
+            """, {
+                'lhs': 'MATCH (n) \n            RETURN n',
+                'constructors': [{
+                        'alias': 'x', 
+                        'ids': ['n'], 
+                        'labels': ['Person'], 
+                        'properties': [{
+                            'key': 'name', 
+                            'value': '"SK1(" + n.name + ")"'
+                        }]
                 }]
             }
         )

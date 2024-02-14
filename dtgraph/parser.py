@@ -34,4 +34,6 @@ EdgeConstructor = RightEdgeConstructor | LeftEdgeConstructor
 
 Constructor = EdgeConstructor | NodeConstructor
 RightHandSide = DelimitedList(Group(Constructor), allow_trailing_delim=True)('constructors')
-RuleParser = SkipTo('=>')('lhs') + '=>' + RightHandSide
+
+middle_delimiter = Keyword('=>') | CaselessKeyword('GENERATE')
+RuleParser = SkipTo(middle_delimiter)('lhs') + middle_delimiter + RightHandSide
