@@ -104,7 +104,7 @@ class Neo4jGraph(object):
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
-            print(f"Info: There is currently {records[0]['count']} node(s) in the database.")
+            print(f"Info: There are currently {records[0]['count']} node(s) in the database.")
 
     def query(self, query):
         records, summary, keys = self.driver.execute_query(
@@ -138,6 +138,39 @@ class Neo4jGraph(object):
                   f"set {summary.counters.properties_set} properties, created {summary.counters.relationships_created} relationships, completed after {summary.result_available_after} ms.")
         return summary
 
+    def diagnose_nodes(self, stats=True):
+        diagnose_nodes_query = """
+        MATCH (n:_hasConflict)
+        RETURN n
+        """
+        records, summary, keys = self.driver.execute_query(
+            diagnose_nodes_query,
+            database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(self.verbose or stats):
+            print(f"NodeConflicts: There are currently {len(records)} node(s) in the database which have a conflict.")
+        for r in records:
+            print(r['n'])
+
+    def diagnose_edges(self, stats=True):
+        diagnose_nodes_query = """
+        MATCH ()-[r]->()
+        WHERE r._hasConflict IS NOT NULL
+        RETURN r
+        """
+        records, summary, keys = self.driver.execute_query(
+            diagnose_nodes_query,
+            database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(self.verbose or stats):
+            print(f"EdgeConflicts: There are currently {len(records)} edge(s) in the database which have a conflict.")
+        for r in records:
+            print(r['r'])
+
+    # TODO refactor the code below by pushing into the following functions the logic to handle the differences in how backends define their indexes
+    # rename funtions according to PEP8, i.e., add_index
     def addIndex(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
                 query,

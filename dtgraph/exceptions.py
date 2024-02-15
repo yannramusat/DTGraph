@@ -22,3 +22,6 @@ class TransformationActivationError(DTGraphException):
 
 class TransformationDeactivationError(DTGraphException):
     """Error in transformation deactivation."""
+
+class TransformationDiagnosisError(DTGraphException):
+    """Error in transformation diagnosis."""

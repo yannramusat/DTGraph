@@ -156,3 +156,9 @@ class Transformation(object):
         self._graph.abort(stats=True)
         # finally, set the transformation to be inactive
         self._graph = None
+
+    def diagnose(self):
+        if self._graph is None:
+            raise TransformationDiagnosisError("This transformation is not currently active.")
+        self._graph.diagnose_nodes(stats=True)
+        self._graph.diagnose_edges(stats=True)
