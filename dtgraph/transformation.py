@@ -103,7 +103,7 @@ class Transformation(object):
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
         if self._graph is None:
-            raise TransformationDeactivationError("This transformation is not currently active.")
+            raise TransformationActivationError("This transformation is not currently active.")
         elif self._graph.database == "neo4j":
             indexDummy = """
             CREATE INDEX idx_dummy IF NOT EXISTS

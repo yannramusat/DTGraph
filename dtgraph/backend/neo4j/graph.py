@@ -69,10 +69,10 @@ class Neo4jGraph(object):
     def remove_bookkeeping(self, stats=False):
         remove_query = """
         MATCH ()-[r]->()
-        REMOVE r._id
+        REMOVE r._id, r._hasConflict
         WITH *
         MATCH (n:`_dummy`)
-        REMOVE n:_dummy, n._id
+        REMOVE n:_dummy, n:_hasConflict, n._id
         """
         records, summary, keys = self.driver.execute_query(
             remove_query,
