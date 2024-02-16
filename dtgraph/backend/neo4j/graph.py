@@ -69,10 +69,10 @@ class Neo4jGraph(object):
     def remove_bookkeeping(self, stats=False):
         remove_query = """
         MATCH ()-[r]->()
-        REMOVE r._id
+        REMOVE r._id, r._hasConflict
         WITH *
         MATCH (n:`_dummy`)
-        REMOVE n:_dummy, n._id
+        REMOVE n:_dummy, n:_hasConflict, n._id
         """
         records, summary, keys = self.driver.execute_query(
             remove_query,
@@ -104,7 +104,7 @@ class Neo4jGraph(object):
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
-            print(f"Info: There is currently {records[0]['count']} node(s) in the database.")
+            print(f"Info: There are currently {records[0]['count']} node(s) in the database.")
 
     def query(self, query):
         records, summary, keys = self.driver.execute_query(
@@ -138,6 +138,69 @@ class Neo4jGraph(object):
                   f"set {summary.counters.properties_set} properties, created {summary.counters.relationships_created} relationships, completed after {summary.result_available_after} ms.")
         return summary
 
+    def diagnose_nodes(self, stats=True):
+        diagnose_nodes_query = """
+        MATCH (n:_hasConflict)
+        RETURN n
+        """
+        records, summary, keys = self.driver.execute_query(
+            diagnose_nodes_query,
+            database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(self.verbose or stats):
+            print(f"NodeConflicts: There are currently {len(records)} nodes in the database which have a conflict.")
+        for r in records:
+            print(" ", self._pretty_print_node(r['n']))
+
+    def _pretty_print_node(self, node, print_conflict = True):
+        str_ = "(" 
+        if node.labels:
+            str_ += ":"
+        str_ += ":".join([l for l in node.labels if l != "_hasConflict" and l != "_dummy"])
+        str_ += " {"
+        str_ += ", ".join([k + ": " + str(v) for k, v in node.items() if k != '_id' and v != "Conflict Detected!"])
+        str_ += "})"
+        if(print_conflict):
+            str_ += " has a conflict on attributes ['"
+            str_ += "', '".join([k for k, v in node.items() if v == "Conflict Detected!"])
+            str_ += "']." # It has been generated with parameters: " + node['_id']
+        return str_
+
+    def diagnose_edges(self, stats=True):
+        diagnose_nodes_query = """
+        MATCH (i)-[r]->(o)
+        WHERE r._hasConflict IS NOT NULL
+        RETURN i, r, o
+        """
+        records, summary, keys = self.driver.execute_query(
+            diagnose_nodes_query,
+            database=self.database)
+        if(self.verbose):
+            self.print_query_stats(records, summary, keys)
+        if(self.verbose or stats):
+            print(f"EdgeConflicts: There are currently {len(records)} edges in the database which have a conflict.")
+        for r in records:
+            print(" ",self._pretty_print_node(r['i'], print_conflict=False), end="")
+            print(self._pretty_print_edge(r['r']), end="")
+            print(self._pretty_print_node(r['o'], print_conflict=False), end=" ")
+            print(self._pretty_print_edge_conflicts(r['r']))
+
+    def _pretty_print_edge(self, edge):
+        str_ = "-[:" + edge.type
+        str_ += " {"
+        str_ += ", ".join([k + ": " + str(v) for k, v in edge.items() if k != '_id' and k != "_hasConflict" and v != "Conflict Detected!"])
+        str_ += "}]->" # It has been generated with parameters: " + node['_id']
+        return str_
+
+    def _pretty_print_edge_conflicts(self, edge):
+        str_ = "has a conflict on attributes ['"
+        str_ += "', '".join([k for k, v in edge.items() if v == "Conflict Detected!"])
+        str_ += "']"
+        return str_
+
+    # TODO refactor the code below by pushing into the following functions the logic to handle the differences in how backends define their indexes
+    # rename funtions according to PEP8, i.e., add_index
     def addIndex(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
                 query,

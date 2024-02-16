@@ -127,7 +127,25 @@ class Compiler:
                     script += f'    SET '
                 script += ",\n        ".join([self._conflict_detection(alias, p) for p in properties])
             script += "\n"
+
+        # centralize information about the conflicts on this given element to allow fast lookup by diagnose()
+        if(properties):
+            script += "FOREACH (i in CASE WHEN " + " OR ".join([self._list_cd(alias, p) for p in properties]) 
+            script += " THEN [1] else [] END | "
+            # if this is a node, add a specific label
+            if setLabels:
+                script += "SET " + alias + ":_hasConflict"
+            # if this is an edge, add a specific attribute
+            else:
+                script += "SET " + alias + "._hasConflict = True"
+            script += ")\n"
+
         return script
+
+    def _list_cd(self, alias: str, p: dict[str, str]) -> str:
+        return (
+            alias + "." + p['key'] + ' = "Conflict Detected!"' 
+        )
 
     def _conflict_detection(self, alias: str, p: dict[str, str]) -> str:
         return (

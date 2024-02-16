@@ -27,12 +27,14 @@ class Transformation(object):
     apply_on(graph)
         Execute the query on the Neo4jGraph graph. 
         The transformation is activated.
+    diagnose()
+        List all conflicting attributes on each output element.
     eject(destrutive = False)
-        Removes internal bookeeping data (if any). 
+        Remove internal bookeeping data (if any). 
         The transformation is deactivated.
         This is useful if you want to keep both the input and output for later use.
     exec(graph, destructive = False)
-        Performs apply_on(graph) followed by eject(destructive)
+        Perform apply_on(graph) followed by eject(destructive)
         The transformation is deactivated.
     """
 
@@ -103,7 +105,7 @@ class Transformation(object):
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
         if self._graph is None:
-            raise TransformationDeactivationError("This transformation is not currently active.")
+            raise TransformationActivationError("This transformation is not currently active.")
         elif self._graph.database == "neo4j":
             indexDummy = """
             CREATE INDEX idx_dummy IF NOT EXISTS
@@ -156,3 +158,13 @@ class Transformation(object):
         self._graph.abort(stats=True)
         # finally, set the transformation to be inactive
         self._graph = None
+
+    def diagnose(self):
+        """
+        Print all information about conflicts:
+            list every conflicting attribute on every element of the output property graph
+        """
+        if self._graph is None:
+            raise TransformationDiagnosisError("This transformation is not currently active.")
+        self._graph.diagnose_nodes(stats=True)
+        self._graph.diagnose_edges(stats=True)
