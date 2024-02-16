@@ -149,15 +149,29 @@ class Neo4jGraph(object):
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
-            print(f"NodeConflicts: There are currently {len(records)} node(s) in the database which have a conflict.")
+            print(f"NodeConflicts: There are currently {len(records)} nodes in the database which have a conflict.")
         for r in records:
-            print(r['n'])
+            print(" ", self._pretty_print_node(r['n']))
+
+    def _pretty_print_node(self, node, print_conflict = True):
+        str_ = "(" 
+        if node.labels:
+            str_ += ":"
+        str_ += ":".join([l for l in node.labels if l != "_hasConflict" and l != "_dummy"])
+        str_ += " {"
+        str_ += ", ".join([k + ": " + str(v) for k, v in node.items() if k != '_id' and v != "Conflict Detected!"])
+        str_ += "})"
+        if(print_conflict):
+            str_ += " has a conflict on attributes ['"
+            str_ += "', '".join([k for k, v in node.items() if v == "Conflict Detected!"])
+            str_ += "']." # It has been generated with parameters: " + node['_id']
+        return str_
 
     def diagnose_edges(self, stats=True):
         diagnose_nodes_query = """
-        MATCH ()-[r]->()
+        MATCH (i)-[r]->(o)
         WHERE r._hasConflict IS NOT NULL
-        RETURN r
+        RETURN i, r, o
         """
         records, summary, keys = self.driver.execute_query(
             diagnose_nodes_query,
@@ -165,9 +179,25 @@ class Neo4jGraph(object):
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
-            print(f"EdgeConflicts: There are currently {len(records)} edge(s) in the database which have a conflict.")
+            print(f"EdgeConflicts: There are currently {len(records)} edges in the database which have a conflict.")
         for r in records:
-            print(r['r'])
+            print(" ",self._pretty_print_node(r['i'], print_conflict=False), end="")
+            print(self._pretty_print_edge(r['r']), end="")
+            print(self._pretty_print_node(r['o'], print_conflict=False), end=" ")
+            print(self._pretty_print_edge_conflicts(r['r']))
+
+    def _pretty_print_edge(self, edge):
+        str_ = "-[:" + edge.type
+        str_ += " {"
+        str_ += ", ".join([k + ": " + str(v) for k, v in edge.items() if k != '_id' and k != "_hasConflict" and v != "Conflict Detected!"])
+        str_ += "}]->" # It has been generated with parameters: " + node['_id']
+        return str_
+
+    def _pretty_print_edge_conflicts(self, edge):
+        str_ = "has a conflict on attributes ['"
+        str_ += "', '".join([k for k, v in edge.items() if v == "Conflict Detected!"])
+        str_ += "']"
+        return str_
 
     # TODO refactor the code below by pushing into the following functions the logic to handle the differences in how backends define their indexes
     # rename funtions according to PEP8, i.e., add_index
