@@ -10,10 +10,10 @@ COMMA, COLON, LPAR, RPAR, LBRACE, RBRACE, EQUAL = map(Suppress, ",:(){}=")
 
 #constant = Combine(Literal('"') + Word(alphanums) + Literal('"'))
 constant = QuotedString('"', unquoteResults=False)
-freevar = Word(alphas.lower(), alphanums)
-attribute = Word(alphas, alphanums)
+freevar = Word(alphas.lower(), alphanums+"_")
+attribute = Word(alphas, alphanums+"_")
 accesskey = Combine(freevar + Literal('.') + attribute)
-label = Word(alphas.upper(), alphanums)
+label = Word(alphas.upper(), alphanums+"_")
 
 IDElement = (constant | accesskey | freevar | label)
 # As list of constant or accesskey expressions:

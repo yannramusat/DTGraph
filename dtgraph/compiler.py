@@ -1,8 +1,9 @@
 from dtgraph.exceptions import CompileError
 
 class Compiler:
-    def __init__(self, database):
+    def __init__(self, database, with_diagnose = True):
         self._database = database
+        self._with_diagnose = with_diagnose
 
     def compile(self, dict) -> str:
         """Compiles a rule.
@@ -129,7 +130,7 @@ class Compiler:
             script += "\n"
 
         # centralize information about the conflicts on this given element to allow fast lookup by diagnose()
-        if(properties):
+        if(properties and self._with_diagnose):
             script += "FOREACH (i in CASE WHEN " + " OR ".join([self._list_cd(alias, p) for p in properties]) 
             script += " THEN [1] else [] END | "
             # if this is a node, add a specific label

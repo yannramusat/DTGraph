@@ -40,7 +40,7 @@ class Transformation(object):
 
     _graph = None # when not none, stores a Neo4jGraph object on which the transformation is currently active
 
-    def __init__(self, rules):
+    def __init__(self, rules, with_diagnose=True):
         """
         Initializes a transformation with a list of rules.
 
@@ -50,6 +50,7 @@ class Transformation(object):
             A list of rules.
         """
         self._rules = rules
+        self._with_diagnose = with_diagnose
 
     def add(self, rule):
         """
@@ -63,7 +64,7 @@ class Transformation(object):
         """
         self._rules.append(rule)
         if self._graph:
-            rule.apply_on(self._graph)
+            rule.apply_on(self._graph, with_diagnose=self._with_diagnose)
 
     def exec(self, graph, destructive = False):
         """
@@ -77,7 +78,7 @@ class Transformation(object):
         destructive : bool
             Whether or not eject should remove input data.
         """
-        self.apply_on(graph)
+        self.apply_on(graph, with_diagnose=self._with_diagnose)
         self.eject(destructive=destructive)
     
     def __call__(self, *args, **kwargs):
@@ -100,7 +101,7 @@ class Transformation(object):
             self._graph = graph
         self._pre_apply()
         for r in self._rules:
-            r.apply_on(self._graph)
+            r.apply_on(self._graph, with_diagnose=self._with_diagnose)
 
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
@@ -166,5 +167,7 @@ class Transformation(object):
         """
         if self._graph is None:
             raise TransformationDiagnosisError("This transformation is not currently active.")
+        if self._with_diagnose == False:
+            raise TransformationDiagnosisError("Diagnosis have been explicitely deactivated for this transformation.")
         self._graph.diagnose_nodes(stats=True)
         self._graph.diagnose_edges(stats=True)

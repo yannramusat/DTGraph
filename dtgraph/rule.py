@@ -67,11 +67,13 @@ class Rule(object):
         """Creates a rule object from a raw representation. """
         return cls(raw = raw)
 
-    def _compile(self, database="neo4j"):
-        compiler = Compiler(database)
-        self._compiled = compiler.compile(self._dict)
+    def _compile(self, database="neo4j", with_diagnose = True):
+        # the compilation step is not idempotent
+        if self._compiled is None:
+            compiler = Compiler(database, with_diagnose=with_diagnose)
+            self._compiled = compiler.compile(self._dict)
 
-    def apply_on(self, graph):
+    def apply_on(self, graph, with_diagnose = True):
         """
         Applies the rule on the given graph, in the context of a graph transformation scenario.
 
@@ -81,7 +83,7 @@ class Rule(object):
             Graph to be transformed by the rule.
         """
         if self._compiled is None:
-            self._compile(graph.database)
+            self._compile(graph.database, with_diagnose=with_diagnose)
         _ = graph.exec_rule(self._compiled, stats=True)
 
     def __str__(self):
