@@ -114,7 +114,7 @@ class Neo4jGraph(object):
             self.print_query_stats(records, summary, keys)
             print(f"Query:  Added {summary.counters.labels_added} labels, created {summary.counters.nodes_created} nodes, " 
                   f"set {summary.counters.properties_set} properties, created {summary.counters.relationships_created} relationships, completed after {summary.result_available_after} ms.")
-        return summary.result_available_after
+        return (len(records), summary.result_consumed_after)
     
     def load_scenario_script(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(

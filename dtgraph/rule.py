@@ -73,7 +73,7 @@ class Rule(object):
             compiler = Compiler(database, with_diagnose=with_diagnose, explain = explain, profile = profile)
             self._compiled = compiler.compile(self._dict)
 
-    def apply_on(self, graph, with_diagnose = True, explain = False, profile = False):
+    def apply_on(self, graph, with_diagnose = True, explain = False, profile = False) -> int:
         """
         Applies the rule on the given graph, in the context of a graph transformation scenario.
 
@@ -84,7 +84,8 @@ class Rule(object):
         """
         if self._compiled is None:
             self._compile(graph.database, with_diagnose=with_diagnose, explain = explain, profile = profile)
-        _ = graph.exec_rule(self._compiled, stats=True)
+        summary = graph.exec_rule(self._compiled, stats=True)
+        return summary.result_available_after, summary
 
     def __str__(self):
         repr = ""

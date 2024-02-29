@@ -87,7 +87,7 @@ class Transformation(object):
         """See `exec`."""
         self.exec(*args, **kwargs)
 
-    def apply_on(self, graph):
+    def apply_on(self, graph) -> int:
         """
         Applies all the rule on the given graph.
         Sets the transformation in active state.
@@ -102,8 +102,10 @@ class Transformation(object):
         else:
             self._graph = graph
         self._pre_apply()
+        tt = 0
         for r in self._rules:
-            r.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)
+            tt += r.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)[0]
+        return tt
 
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
