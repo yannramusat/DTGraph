@@ -40,7 +40,7 @@ class Transformation(object):
 
     _graph = None # when not none, stores a Neo4jGraph object on which the transformation is currently active
 
-    def __init__(self, rules, with_diagnose=True):
+    def __init__(self, rules, with_diagnose=True, explain = False, profile = False):
         """
         Initializes a transformation with a list of rules.
 
@@ -51,6 +51,8 @@ class Transformation(object):
         """
         self._rules = rules
         self._with_diagnose = with_diagnose
+        self._explain = explain
+        self._profile = profile
 
     def add(self, rule):
         """
@@ -64,7 +66,7 @@ class Transformation(object):
         """
         self._rules.append(rule)
         if self._graph:
-            rule.apply_on(self._graph, with_diagnose=self._with_diagnose)
+            rule.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)
 
     def exec(self, graph, destructive = False):
         """
@@ -78,7 +80,7 @@ class Transformation(object):
         destructive : bool
             Whether or not eject should remove input data.
         """
-        self.apply_on(graph, with_diagnose=self._with_diagnose)
+        self.apply_on(graph)
         self.eject(destructive=destructive)
     
     def __call__(self, *args, **kwargs):
@@ -101,7 +103,7 @@ class Transformation(object):
             self._graph = graph
         self._pre_apply()
         for r in self._rules:
-            r.apply_on(self._graph, with_diagnose=self._with_diagnose)
+            r.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)
 
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
@@ -148,12 +150,13 @@ class Transformation(object):
         # finally, set the transformation to be inactive
         self._graph = None
 
-    def abort(self):
+    def abort(self, keep_index = False):
         """
         Removes all current output data for the active transformation,
         and deactivates the transformation.
         """
-        self._pre_eject()
+        if not keep_index:
+            self._pre_eject()
         if self._graph is None:
             raise TransformationDeactivationError("This transformation is not currently active.")
         self._graph.abort(stats=True)

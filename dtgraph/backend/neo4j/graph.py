@@ -131,6 +131,10 @@ class Neo4jGraph(object):
         records, summary, keys = self.driver.execute_query(
             query,
             database=self.database)
+        if(summary.plan):
+            print(summary.plan['args']['string-representation'])
+        if(summary.profile):
+            print(summary.profile['args']['string-representation'])
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
