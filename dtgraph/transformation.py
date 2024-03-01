@@ -165,7 +165,7 @@ class Transformation(object):
         # finally, set the transformation to be inactive
         self._graph = None
 
-    def diagnose(self):
+    def diagnose(self) -> tuple[int, int]:
         """
         Print all information about conflicts:
             list every conflicting attribute on every element of the output property graph
@@ -174,5 +174,6 @@ class Transformation(object):
             raise TransformationDiagnosisError("This transformation is not currently active.")
         if self._with_diagnose == False:
             raise TransformationDiagnosisError("Diagnosis have been explicitely deactivated for this transformation.")
-        self._graph.diagnose_nodes(stats=True)
-        self._graph.diagnose_edges(stats=True)
+        nb_c_n = self._graph.diagnose_nodes(stats=True)
+        nb_c_e = self._graph.diagnose_edges(stats=True)
+        return (nb_c_n, nb_c_e)

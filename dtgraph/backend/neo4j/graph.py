@@ -156,6 +156,7 @@ class Neo4jGraph(object):
             print(f"NodeConflicts: There are currently {len(records)} nodes in the database which have a conflict.")
         for r in records:
             print(" ", self._pretty_print_node(r['n']))
+        return len(records)
 
     def _pretty_print_node(self, node, print_conflict = True):
         str_ = "(" 
@@ -189,6 +190,7 @@ class Neo4jGraph(object):
             print(self._pretty_print_edge(r['r']), end="")
             print(self._pretty_print_node(r['o'], print_conflict=False), end=" ")
             print(self._pretty_print_edge_conflicts(r['r']))
+        return len(records)
 
     def _pretty_print_edge(self, edge):
         str_ = "-[:" + edge.type
