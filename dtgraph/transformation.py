@@ -10,7 +10,7 @@ An instance manages a set of transformation rules, and provide several facilitie
 - Ejection mechanism: when a transformation is validated, removes internal bookeeping data.
 """
 from dtgraph.rule import Rule
-from dtgraph.exceptions import TransformationActivationError
+from dtgraph.exceptions import TransformationActivationError, TransformationDeactivationError, TransformationDiagnosisError
 
 class Transformation(object):
     """
