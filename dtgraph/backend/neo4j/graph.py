@@ -188,7 +188,7 @@ class Neo4jGraph(object):
         for r in records:
             print(" ",self._pretty_print_node(r['i'], print_conflict=False), end="")
             print(self._pretty_print_edge(r['r']), end="")
-            print(self._pretty_print_node(r['o'], print_conflict=False), end=" ")
+            print(self._pretty_print_node(r['o'], print_conflict=False))
             print(self._pretty_print_edge_conflicts(r['r']))
         return len(records)
 
@@ -200,7 +200,7 @@ class Neo4jGraph(object):
         return str_
 
     def _pretty_print_edge_conflicts(self, edge):
-        str_ = "has a conflict on attributes ['"
+        str_ = "    has a conflict on attributes ['"
         str_ += "', '".join([k for k, v in edge.items() if v == "Conflict Detected!"])
         str_ += "']"
         return str_
