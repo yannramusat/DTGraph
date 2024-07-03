@@ -40,18 +40,19 @@ class Neo4jGraph(object):
         print(f"Flushed database: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
 
     def abort(self, stats=False):
-        abort_query = """
-        MATCH (n:`_dummy`)
-        DETACH DELETE n
-        """
-        records, summary, keys = self.driver.execute_query(
-            abort_query,
-            database=self.database)
-        if(self.verbose):
-            self.print_query_stats(records, summary, keys)
-        if(stats):
-            print(f"Abort: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
-    
+        with self.driver.session(database=self.database) as session:
+            abort_query = """
+            MATCH (n:`_dummy`)
+            DETACH DELETE n
+            """
+            records, summary, keys = self.driver.execute_query(
+                abort_query,
+                database=self.database)
+            if(self.verbose):
+                self.print_query_stats(records, summary, keys)
+            if(stats):
+                print(f"Abort: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
+        
     def destruct_input(self, stats = False):
         destruct_query = """
         MATCH (n)
@@ -114,7 +115,7 @@ class Neo4jGraph(object):
             self.print_query_stats(records, summary, keys)
             print(f"Query:  Added {summary.counters.labels_added} labels, created {summary.counters.nodes_created} nodes, " 
                   f"set {summary.counters.properties_set} properties, created {summary.counters.relationships_created} relationships, completed after {summary.result_available_after} ms.")
-        return summary.result_available_after
+        return (len(records), summary.result_consumed_after)
     
     def load_scenario_script(self, query, stats=False):
         records, summary, keys = self.driver.execute_query(
@@ -131,6 +132,10 @@ class Neo4jGraph(object):
         records, summary, keys = self.driver.execute_query(
             query,
             database=self.database)
+        if(summary.plan):
+            print(summary.plan['args']['string-representation'])
+        if(summary.profile):
+            print(summary.profile['args']['string-representation'])
         if(self.verbose):
             self.print_query_stats(records, summary, keys)
         if(self.verbose or stats):
@@ -152,6 +157,7 @@ class Neo4jGraph(object):
             print(f"NodeConflicts: There are currently {len(records)} nodes in the database which have a conflict.")
         for r in records:
             print(" ", self._pretty_print_node(r['n']))
+        return len(records)
 
     def _pretty_print_node(self, node, print_conflict = True):
         str_ = "(" 
@@ -183,8 +189,9 @@ class Neo4jGraph(object):
         for r in records:
             print(" ",self._pretty_print_node(r['i'], print_conflict=False), end="")
             print(self._pretty_print_edge(r['r']), end="")
-            print(self._pretty_print_node(r['o'], print_conflict=False), end=" ")
+            print(self._pretty_print_node(r['o'], print_conflict=False))
             print(self._pretty_print_edge_conflicts(r['r']))
+        return len(records)
 
     def _pretty_print_edge(self, edge):
         str_ = "-[:" + edge.type
@@ -194,7 +201,7 @@ class Neo4jGraph(object):
         return str_
 
     def _pretty_print_edge_conflicts(self, edge):
-        str_ = "has a conflict on attributes ['"
+        str_ = "    has a conflict on attributes ['"
         str_ += "', '".join([k for k, v in edge.items() if v == "Conflict Detected!"])
         str_ += "']"
         return str_

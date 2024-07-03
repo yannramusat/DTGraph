@@ -10,7 +10,7 @@ An instance manages a set of transformation rules, and provide several facilitie
 - Ejection mechanism: when a transformation is validated, removes internal bookeeping data.
 """
 from dtgraph.rule import Rule
-from dtgraph.exceptions import TransformationActivationError
+from dtgraph.exceptions import TransformationActivationError, TransformationDeactivationError, TransformationDiagnosisError
 
 class Transformation(object):
     """
@@ -40,7 +40,7 @@ class Transformation(object):
 
     _graph = None # when not none, stores a Neo4jGraph object on which the transformation is currently active
 
-    def __init__(self, rules):
+    def __init__(self, rules, with_diagnose=True, explain = False, profile = False):
         """
         Initializes a transformation with a list of rules.
 
@@ -50,6 +50,9 @@ class Transformation(object):
             A list of rules.
         """
         self._rules = rules
+        self._with_diagnose = with_diagnose
+        self._explain = explain
+        self._profile = profile
 
     def add(self, rule):
         """
@@ -63,7 +66,7 @@ class Transformation(object):
         """
         self._rules.append(rule)
         if self._graph:
-            rule.apply_on(self._graph)
+            rule.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)
 
     def exec(self, graph, destructive = False):
         """
@@ -84,7 +87,7 @@ class Transformation(object):
         """See `exec`."""
         self.exec(*args, **kwargs)
 
-    def apply_on(self, graph):
+    def apply_on(self, graph) -> int:
         """
         Applies all the rule on the given graph.
         Sets the transformation in active state.
@@ -99,8 +102,10 @@ class Transformation(object):
         else:
             self._graph = graph
         self._pre_apply()
+        tt = 0
         for r in self._rules:
-            r.apply_on(self._graph)
+            tt += r.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)[0]
+        return tt
 
     def _pre_apply(self):
         """Sets-up the environment for executing the transformation."""
@@ -147,24 +152,28 @@ class Transformation(object):
         # finally, set the transformation to be inactive
         self._graph = None
 
-    def abort(self):
+    def abort(self, keep_index = False):
         """
         Removes all current output data for the active transformation,
         and deactivates the transformation.
         """
-        self._pre_eject()
+        if not keep_index:
+            self._pre_eject()
         if self._graph is None:
             raise TransformationDeactivationError("This transformation is not currently active.")
         self._graph.abort(stats=True)
         # finally, set the transformation to be inactive
         self._graph = None
 
-    def diagnose(self):
+    def diagnose(self) -> tuple[int, int]:
         """
         Print all information about conflicts:
             list every conflicting attribute on every element of the output property graph
         """
         if self._graph is None:
             raise TransformationDiagnosisError("This transformation is not currently active.")
-        self._graph.diagnose_nodes(stats=True)
-        self._graph.diagnose_edges(stats=True)
+        if self._with_diagnose == False:
+            raise TransformationDiagnosisError("Diagnosis have been explicitely deactivated for this transformation.")
+        nb_c_n = self._graph.diagnose_nodes(stats=True)
+        nb_c_e = self._graph.diagnose_edges(stats=True)
+        return (nb_c_n, nb_c_e)

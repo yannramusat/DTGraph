@@ -1,8 +1,11 @@
 from dtgraph.exceptions import CompileError
 
 class Compiler:
-    def __init__(self, database):
+    def __init__(self, database, with_diagnose = True, explain = False, profile = False):
         self._database = database
+        self._with_diagnose = with_diagnose
+        self._explain = explain
+        self._profile = profile
 
     def compile(self, dict) -> str:
         """Compiles a rule.
@@ -21,7 +24,12 @@ class Compiler:
         """
         aliases = []
         missing_aliases = []
-        script = dict['lhs'].strip() + "\n"
+        script = "" 
+        if self._explain:
+            script += "EXPLAIN "
+        if self._profile:
+            script += "PROFILE "
+        script += dict['lhs'].strip() + "\n"
         # handle first the node constructors; including node constructors found in edge constructors
         for constructor in dict.get('constructors'):
             src, tgt = constructor.get('src'), constructor.get('tgt')
@@ -129,7 +137,7 @@ class Compiler:
             script += "\n"
 
         # centralize information about the conflicts on this given element to allow fast lookup by diagnose()
-        if(properties):
+        if(properties and self._with_diagnose):
             script += "FOREACH (i in CASE WHEN " + " OR ".join([self._list_cd(alias, p) for p in properties]) 
             script += " THEN [1] else [] END | "
             # if this is a node, add a specific label
