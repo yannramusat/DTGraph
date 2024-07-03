@@ -43,18 +43,15 @@ class Neo4jGraph(object):
         with self.driver.session(database=self.database) as session:
             abort_query = """
             MATCH (n:`_dummy`)
-            CALL { WITH n
             DETACH DELETE n
-            } IN TRANSACTIONS OF 10000 ROWS
             """
-            #records, summary, keys = 
-            session.run(
-                abort_query)
-                #database=self.database)
-            #if(self.verbose):
-            #    self.print_query_stats(records, summary, keys)
-            #if(stats):
-            #    print(f"Abort: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
+            records, summary, keys = self.driver.execute_query(
+                abort_query,
+                database=self.database)
+            if(self.verbose):
+                self.print_query_stats(records, summary, keys)
+            if(stats):
+                print(f"Abort: Deleted {summary.counters.nodes_deleted} nodes, deleted {summary.counters.relationships_deleted} relationships, completed after {summary.result_available_after} ms.")
         
     def destruct_input(self, stats = False):
         destruct_query = """
