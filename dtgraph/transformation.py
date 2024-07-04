@@ -104,7 +104,8 @@ class Transformation(object):
         self._pre_apply()
         tt = 0
         for r in self._rules:
-            tt += r.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)[0]
+            t = r.apply_on(self._graph, with_diagnose=self._with_diagnose, explain = self._explain, profile = self._profile)[0]
+            tt += t if t else 0
         return tt
 
     def _pre_apply(self):
